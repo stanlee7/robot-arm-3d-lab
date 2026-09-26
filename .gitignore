@@ -6,3 +6,6 @@ sim/*.gif
 sim/*.png
 web/dist/
 menagerie/
+out/
+/demo.gif
+/demo_end.png

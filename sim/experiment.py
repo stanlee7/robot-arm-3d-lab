@@ -25,7 +25,8 @@ if __name__ == "__main__":
         ok = held and dist < 0.02
         rows.append({"x": round(x, 3), "y": round(y, 3), "거리_m": round(r, 3), "들어올림": bool(held), "목표오차_m": round(dist, 3), "성공": bool(ok)})
         print(i, rows[-1], flush=True)
-    Path("out").mkdir(exist_ok=True)
+    OUT = Path(__file__).parent / "out"  # 어디서 실행해도 sim/out/에 저장
+    OUT.mkdir(exist_ok=True)
     s = sum(r["성공"] for r in rows)
-    json.dump({"시도": n, "성공": s, "성공률": round(s / n, 2), "기록": rows}, open("out/experiment.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump({"시도": n, "성공": s, "성공률": round(s / n, 2), "기록": rows}, open(OUT / "experiment.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"성공 {s}/{n}")
