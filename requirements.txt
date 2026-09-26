@@ -1,0 +1,6 @@
+mujoco==3.14.0
+glfw==2.10.2
+numpy>=1.26
+pillow>=10
+# Claude Code 연동(sim/mcp_server.py)을 쓸 때만
+mcp>=1.2,<2

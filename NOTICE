@@ -1,0 +1,18 @@
+로봇팔 3D 실습실 (robot-arm-3d-lab)
+Copyright 2026 stanlee7
+
+이 저장소의 코드는 Apache License 2.0으로 배포합니다 (LICENSE).
+
+이 저장소에는 다음 제3자 자료가 들어 있습니다.
+
+1. SO-ARM100 로봇 모델 — sim/so_arm100.xml, sim/assets/*.stl
+   - 출처: MuJoCo Menagerie (https://github.com/google-deepmind/mujoco_menagerie), trs_so_arm100
+   - 원 로봇: The Robot Studio, Standard Open Arm-100 (https://github.com/TheRobotStudio/SO-ARM100)
+   - 라이선스: Apache License 2.0
+   - 원본 파일을 수정하지 않고 포함했습니다.
+   - web/robot_data.json 과 docs/index.html 에 들어 있는 부품 모양·관절 정보는
+     이 모델을 MuJoCo로 컴파일한 뒤 변환·압축한 파생 자료입니다 (web/export_model.py).
+
+2. 브라우저 버전이 실행 중에 불러오는 라이브러리와 글꼴 (저장소에는 들어 있지 않음)
+   - three.js — MIT License (https://github.com/mrdoob/three.js), jsDelivr CDN
+   - IBM Plex Sans KR, IBM Plex Mono — SIL Open Font License 1.1, Google Fonts

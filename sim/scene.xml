@@ -1,0 +1,45 @@
+<mujoco model="so_arm100 workcell">
+  <include file="so_arm100.xml"/>
+  <option timestep="0.002" cone="elliptic" impratio="10"/>
+  <visual>
+    <headlight diffuse="0.45 0.45 0.45" ambient="0.25 0.25 0.28" specular="0.1 0.1 0.1"/>
+    <quality shadowsize="4096"/>
+    <global azimuth="135" elevation="-25" offwidth="960" offheight="720"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.32 0.36 0.42" rgb2="0.08 0.09 0.11" width="512" height="512"/>
+    <texture type="2d" name="bench" builtin="checker" mark="edge" rgb1="0.42 0.44 0.47" rgb2="0.38 0.40 0.43" markrgb="0.55 0.57 0.6" width="512" height="512"/>
+    <material name="bench" texture="bench" texuniform="true" texrepeat="12 12" reflectance="0.15"/>
+    <texture type="2d" name="shop" builtin="checker" rgb1="0.18 0.19 0.21" rgb2="0.15 0.16 0.18" width="256" height="256"/>
+    <material name="shop" texture="shop" texuniform="true" texrepeat="4 4"/>
+    <material name="frame" rgba="0.12 0.13 0.15 1" reflectance="0.3"/>
+    <material name="hazard" rgba="0.95 0.75 0.1 1"/>
+    <material name="bin" rgba="0.15 0.45 0.3 1"/>
+  </asset>
+  <worldbody>
+    <light pos="0.4 0.2 1.4" dir="-0.3 -0.2 -1" directional="false" diffuse="0.8 0.8 0.78" castshadow="true" cutoff="60"/>
+    <light pos="-0.5 -0.8 1.2" dir="0.3 0.5 -1" diffuse="0.35 0.37 0.42" castshadow="false"/>
+    <!-- 공장 바닥(보이기만) -->
+    <geom type="plane" size="3 3 0.1" pos="0 0 -0.75" material="shop" contype="0" conaffinity="0"/>
+    <!-- 작업대 윗면 = 물리 바닥 z=0 -->
+    <geom name="floor" type="box" size="0.45 0.4 0.02" pos="0 -0.15 -0.02" material="bench"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="0.42 0.22 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="-0.42 0.22 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="0.42 -0.52 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="-0.42 -0.52 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <!-- 안전 구역 표시선 -->
+    <geom type="box" size="0.33 0.004 0.0005" pos="0 -0.38 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.004 0.2 0.0005" pos="0.33 -0.18 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.004 0.2 0.0005" pos="-0.33 -0.18 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <!-- 로봇 받침 -->
+    <geom type="cylinder" size="0.06 0.004" pos="0 0 0.004" material="frame" contype="0" conaffinity="0"/>
+    <camera name="front" pos="0.45 -0.55 0.4" xyaxes="0.77 0.64 0 -0.3 0.36 0.88"/>
+    <camera name="top" pos="0 -0.2 0.7" xyaxes="1 0 0 0 1 0"/>
+    <body name="cube" pos="0 -0.25 0.015">
+      <freejoint name="cube"/>
+      <geom name="cube" type="box" size="0.015 0.015 0.015" rgba="0.145 0.306 0.941 1" mass="0.02" friction="1.5 0.02 0.001" condim="4"/>
+    </body>
+    <!-- 목표: 초록 트레이 표시 -->
+    <site name="target" pos="0.12 -0.2 0.001" size="0.03 0.001" type="cylinder" rgba="0.15 0.75 0.4 0.55"/>
+  </worldbody>
+</mujoco>

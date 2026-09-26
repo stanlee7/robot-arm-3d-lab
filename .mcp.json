@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "robot-arm-sim": {
+      "command": ".venv/Scripts/python.exe",
+      "args": [
+        "sim/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "ROBOT_VIEW": "1"
+      }
+    }
+  }
+}
