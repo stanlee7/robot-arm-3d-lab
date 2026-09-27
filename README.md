@@ -79,6 +79,10 @@ python programs/sort_by_color.py --view        # 실시간 3D 창
 
 결과(2026-09-27): 큐브 30개 중 30개 제자리, 인식 오차 약 0.1cm. 만들며 부딪힌 문제 세 가지(팔이 카메라를 가림, 조명이 색을 바꿈, 빨리 돌면 물건이 빠짐)와 실물 로봇으로 옮기는 방법은 [programs/README.md](programs/README.md).
 
+## ROS 2 버전
+
+같은 분류 작업을 로봇 업계 표준 방식(ROS 2)으로 나눈 노드 3개(로봇팔·인식·분류 작업)가 `ros2/`에 있습니다. 노드는 표준 메시지(JointState, Image, Point, SetBool)로만 대화하고, 실물 로봇이면 로봇팔 노드만 바꾸면 됩니다. WSL Ubuntu에 관리자 권한 없이 ROS 2 Jazzy를 설치해 돌렸습니다(3/3) — 설치·실행은 [ros2/README.md](ros2/README.md).
+
 ## Claude Code와 함께 로봇 프로그램 만들기
 
 이 폴더에서 [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)를 실행하면 `.mcp.json`의 `robot-arm-sim` 도구(상태 보기, 이동, 집게, 카메라, 초기화, 녹화)를 쓸 수 있습니다. Claude에게 프로그램을 만들게 하고, 같은 도구로 바로 돌려 보며 고칩니다. 3D 창에서 움직임이 실시간으로 보입니다.
@@ -119,6 +123,7 @@ sim/mcp_server.py   Claude Code용 MCP 도구
 sim/scene.xml       작업대 장면 (작업대·안전선·목표·큐브)
 sim/scene_sort.xml  색깔별 분류 장면 (큐브 3개·칸 3개)
 programs/           로봇 프로그램 (perception.py 보기, sort_by_color.py 분류)
+ros2/               ROS 2 노드 3개 (arm_sim · perception · sorter)
 sim/so_arm100.xml, sim/assets/   SO-ARM100 모델 (MuJoCo Menagerie)
 web/                브라우저 버전 소스 (app.html, kin.js, export_model.py, build.mjs)
 docs/               GitHub Pages로 배포되는 브라우저 버전
