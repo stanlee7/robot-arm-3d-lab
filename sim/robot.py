@@ -12,6 +12,7 @@ HERE = Path(__file__).parent
 ARM = ["Rotation", "Pitch", "Elbow", "Wrist_Pitch", "Wrist_Roll"]
 HOME = [0, -1.57, 1.57, 1.57, -1.57, 0]
 JAW_OPEN, JAW_CLOSED = 1.2, -0.15
+MAX_JOINT_SPEED = 0.8  # rad/s — 들고 있는 큐브가 빠지지 않는 관절 속도 상한
 
 
 class Arm:
@@ -33,26 +34,56 @@ class Arm:
             self.viewer = Viewer(self.m, self.d)
 
     # ---- 상태 ----
-    def reset(self, cube=(0.0, -0.25)):
+    def reset(self, cube=(0.0, -0.25), objects=None):
+        """objects: {"cube_red": (x, y), ...} — 여러 물체 장면(scene_sort.xml)에서 자리 지정. 안 주면 장면 파일 자리 그대로"""
         mujoco.mj_resetData(self.m, self.d)
         for i, j in enumerate(ARM + ["Jaw"]):
             self.d.qpos[self.m.joint(j).qposadr[0]] = HOME[i]
         self.d.ctrl[:] = HOME
-        c = self.m.joint("cube").qposadr[0]
-        self.d.qpos[c:c + 7] = [cube[0], cube[1], 0.015, 1, 0, 0, 0]
+        if self._has("joint", "cube"):
+            objects = dict(objects or {}, cube=cube)
+        for name, (x, y) in (objects or {}).items():
+            a = self.m.joint(name).qposadr[0]
+            self.d.qpos[a:a + 7] = [x, y, 0.015, 1, 0, 0, 0]
         mujoco.mj_forward(self.m, self.d)
         self.frames = []
+
+    def _has(self, kind, name):
+        try:
+            getattr(self.m, kind)(name); return True
+        except KeyError:
+            return False
+
+    def objects(self):
+        """자유롭게 움직이는 물체(큐브)들의 이름과 위치 — 시뮬레이션의 정답값(프로그램 채점용)"""
+        out = {}
+        for j in range(self.m.njnt):
+            if self.m.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE:
+                b = self.m.jnt_bodyid[j]
+                out[self.m.body(b).name] = self.d.xpos[b].copy()
+        return out
+
+    def site(self, name):
+        return self.d.site_xpos[self.m.site(name).id].copy()
+
+    def move_joints(self, q5, seconds=1.0):
+        """관절 5개를 직접 지정해 움직이기(라디안). 카메라를 가리지 않는 자세 등에 씀"""
+        c = self.d.ctrl.copy(); c[:5] = q5
+        self._run(c, seconds)
 
     def tip(self):
         return (self.d.geom_xpos[self.pads[0]] + self.d.geom_xpos[self.pads[1]]) / 2
 
-    def cube(self):
-        return self.d.xpos[self.m.body("cube").id].copy()
+    def cube(self, name="cube"):
+        return self.d.xpos[self.m.body(name).id].copy()
 
-    def target(self):
-        return self.d.site_xpos[self.m.site("target").id].copy()
+    def target(self, name="target"):
+        return self.d.site_xpos[self.m.site(name).id].copy()
 
     def state(self):
+        if not self._has("body", "cube"):
+            return {"tip": self.tip().round(3).tolist(), "objects": {k: v.round(3).tolist() for k, v in self.objects().items()},
+                    "joints": {j: round(float(self.d.qpos[self.m.joint(j).qposadr[0]]), 3) for j in ARM + ["Jaw"]}}
         return {"tip": self.tip().round(3).tolist(), "cube": self.cube().round(3).tolist(),
                 "target": self.target().round(3).tolist(),
                 "joints": {j: round(float(self.d.qpos[self.m.joint(j).qposadr[0]]), 3) for j in ARM + ["Jaw"]}}
@@ -122,6 +153,8 @@ class Arm:
         둘이 크게 다르면 무언가(큐브·바닥)에 닿아 멈춘 것 — 2026-09-27 Claude 조종 시험에서 발견"""
         q, err = self.ik(xyz)
         c = self.d.ctrl.copy(); c[:5] = q
+        # 속도 제한: 관절이 많이 돌수록 천천히 (2026-09-27 색 분류 실험에서 큰 회전 중 큐브가 빠져나감)
+        seconds = max(seconds, float(np.max(np.abs(np.asarray(q) - self.d.qpos[self.qadr]))) / MAX_JOINT_SPEED)
         self._run(c, seconds)
         tip = self.tip()
         reach = float(np.linalg.norm(np.asarray(xyz, float) - tip))
@@ -148,6 +181,10 @@ class Arm:
             self.renderer = mujoco.Renderer(self.m, 480, 640)
         self.renderer.update_scene(self.d, camera=camera)
         return self.renderer.render()
+
+    def camera_image(self, camera="top"):
+        """카메라 한 장(RGB, 480x640) — 인식 프로그램의 입력. 실물 로봇이면 USB 카메라 사진이 이 자리에 들어감"""
+        return self.render(camera)
 
     def snapshot(self, path, camera="front"):
         Image.fromarray(self.render(camera)).save(path); return str(path)

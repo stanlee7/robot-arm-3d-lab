@@ -66,6 +66,19 @@ print(arm.state())
 - 결과의 `IK오차_m`은 계산상 닿을 수 있는지, `도달오차_m`은 실제로 멈춘 위치와의 차이입니다. 큐브나 작업대에 닿아 멈추면 `도달오차`가 커지고 `비고`에 이유가 적힙니다.
 - `python sim/experiment.py 30` — 무작위 위치 30곳에서 집어 옮기기 성공률 측정
 
+## 로봇 프로그램 — 보기 → 판단 → 움직이기
+
+![색깔별 분류 로봇](media/sort_by_color.gif)
+
+`programs/sort_by_color.py`는 위 카메라 사진만 보고 빨강·파랑·초록 큐브를 찾아 색깔별 칸에 옮깁니다. 로봇은 시뮬레이션의 정답 위치를 모르고, 정답은 채점에만 씁니다.
+
+```bash
+python programs/sort_by_color.py --trials 10   # 무작위 배치 10번 정확도
+python programs/sort_by_color.py --view        # 실시간 3D 창
+```
+
+결과(2026-09-27): 큐브 30개 중 30개 제자리, 인식 오차 약 0.1cm. 만들며 부딪힌 문제 세 가지(팔이 카메라를 가림, 조명이 색을 바꿈, 빨리 돌면 물건이 빠짐)와 실물 로봇으로 옮기는 방법은 [programs/README.md](programs/README.md).
+
 ## Claude Code와 함께 로봇 프로그램 만들기
 
 이 폴더에서 [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)를 실행하면 `.mcp.json`의 `robot-arm-sim` 도구(상태 보기, 이동, 집게, 카메라, 초기화, 녹화)를 쓸 수 있습니다. Claude에게 프로그램을 만들게 하고, 같은 도구로 바로 돌려 보며 고칩니다. 3D 창에서 움직임이 실시간으로 보입니다.
@@ -92,6 +105,7 @@ node web/build.mjs           # → docs/index.html (GitHub Pages)
 | 무작위 위치 20곳 집어 옮기기 | 14/20 | 실패 6건 모두 받침 가까이(15~19cm)에서 잡은 뒤 팔이 접힌 자세에서 역기구학이 갇힘(오차 13cm) |
 | 역기구학을 시작 자세 4개에서 풀어 가장 좋은 답 선택 → 30곳 | 30/30 | 한 자세에서만 풀면 국소해에 빠진다 |
 | Claude(Sonnet)가 MCP 도구로 직접 조종 | 목표에서 0.5cm, 도구 13회 | 큐브 쪽으로 내려갈 때 요청 z=2.0cm, 실제 도달 z=3.2cm(집게가 큐브에 닿아 멈춤)인데 도구가 이 차이를 오차로 보고하지 않는다고 Claude가 짚음 → 도구에 도달 오차와 이유를 추가 |
+| 색깔별 분류(카메라 인식) | 12/15 → 속도 제한 뒤 30/30 | 큰 회전 중 큐브가 빠져나감 → 관절 속도 상한 0.8 rad/s |
 | 브라우저 버전 집어 옮기기 | 첫 점검 목표 중심에서 2.9cm → 수정 후 0.1cm 이하 | 집게는 한쪽 날만 움직이므로, 닫힐 때 큐브를 두 날 가운데로 밀어 넣어야 실제와 같아진다 |
 
 ## 파일
@@ -103,6 +117,8 @@ sim/view_demo.py    자동 반복 데모
 sim/experiment.py   성공률 실험
 sim/mcp_server.py   Claude Code용 MCP 도구
 sim/scene.xml       작업대 장면 (작업대·안전선·목표·큐브)
+sim/scene_sort.xml  색깔별 분류 장면 (큐브 3개·칸 3개)
+programs/           로봇 프로그램 (perception.py 보기, sort_by_color.py 분류)
 sim/so_arm100.xml, sim/assets/   SO-ARM100 모델 (MuJoCo Menagerie)
 web/                브라우저 버전 소스 (app.html, kin.js, export_model.py, build.mjs)
 docs/               GitHub Pages로 배포되는 브라우저 버전
