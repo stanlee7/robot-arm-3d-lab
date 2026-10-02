@@ -1,0 +1,1 @@
+{"img": 96, "arch": "ssm", "data": "../programs/compare/data/demos.npz", "limit": 0, "epochs": 80, "val_loss": 0.12949056923389435}

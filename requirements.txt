@@ -4,3 +4,5 @@ numpy>=1.26
 pillow>=10
 # Claude Code 연동(sim/mcp_server.py)을 쓸 때만
 mcp>=1.2,<2
+# 피지컬 AI 비교(programs/compare)의 C 방식을 학습·평가할 때만
+# torch>=2.2

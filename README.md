@@ -15,6 +15,14 @@
 
 ![MuJoCo에서 큐브를 집어 초록 원으로 옮기는 장면](media/sim_pick_place.gif)
 
+## 새로 추가: 프로그램 로봇 vs 피지컬 AI 로봇 (2026-10)
+
+같은 카페 장면에서 「보관대의 컵 하나 집어 들기」를 **고정 좌표 / 카메라 규칙 / 피지컬 AI(모방학습)** 세 방식으로 풀고 같은 50개 위치에서 성공률을 비교합니다. 결과는 각각 13/50, 45/50, 24/50입니다. 사람이 짠 규칙이 아직 가장 잘하고, AI는 규칙 없이 시연만 보고 고정 좌표의 두 배를 해냈습니다.
+
+![프로그램 로봇 vs 피지컬 AI](programs/compare/compare.gif)
+
+자세한 내용, 직접 해 보기, **Claude Code · Codex · Antigravity로 성공률 올리기 도전 과제**는 [programs/compare/README.md](programs/compare/README.md)에 있습니다.
+
 ## 새로 추가: 로봇 바리스타 3D 실습실 (2026-10)
 
 **설치 없이 열기 → https://stanlee7.github.io/robot-arm-3d-lab/barista.html**
