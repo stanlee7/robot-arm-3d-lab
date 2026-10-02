@@ -28,6 +28,11 @@ class Arm:
         self.renderer = None
         self.frames = []
         self.viewer = None
+        self.ctrl_noise = None    # DART 노이즈(관절 5개, rad)
+        self.ctrl_clean = None
+        self.recorder = None      # 모방학습 데이터 수집: rec_every 스텝마다 recorder(self) 호출
+        self.rec_every = 50       # 0.002s × 50 = 0.1초
+        self._t = 0
         self.reset()
         if view:  # 실시간 3D 창 — 휠 앞뒤 확대·축소, 휠 누르고 드래그 이동 (viewer.py)
             from viewer import Viewer
@@ -140,13 +145,20 @@ class Arm:
         for i in range(n):
             a = min(1.0, (i + 1) / (0.8 * n))
             self.d.ctrl[:] = start + (np.asarray(ctrl_to) - start) * a
+            self.ctrl_clean = self.d.ctrl.copy()          # 모방학습 정답 = 흔들기 전 명령
+            if self.ctrl_noise is not None:               # DART: 실행만 조금 흔든다
+                self.d.ctrl[:5] += self.ctrl_noise
             mujoco.mj_step(self.m, self.d)
+            self.d.ctrl[:] = self.ctrl_clean
+            self._t += 1
+            if self.recorder is not None and self._t % self.rec_every == 0:
+                self.recorder(self)
             if self.viewer is not None and i % 8 == 0:  # 실제 시간 속도로 화면 갱신
                 if not self.viewer.is_running():
                     raise SystemExit("창이 닫혔습니다")
                 self.viewer.sync(); time.sleep(self.m.opt.timestep * 8)
             if record and i % 25 == 0:
-                self.frames.append(self.render())
+                self.frames.append(self.render(getattr(self, 'video_camera', 'front')))
 
     def move_to(self, xyz, seconds=1.2):
         """IK오차 = 계산상 닿을 수 있는지, 도달오차 = 실제로 움직인 뒤 손끝과 요청의 거리.
@@ -170,6 +182,20 @@ class Arm:
         c = self.d.ctrl.copy(); c[5] = JAW_CLOSED if close else JAW_OPEN
         self._run(c, seconds)
         return {"집게": "닫힘" if close else "열림"}
+
+    def hold(self, seconds=1.0):
+        """지금 명령 그대로 시간만 흐르게(기록용 멈춤 구간)"""
+        self._run(self.d.ctrl.copy(), seconds, record=False)
+
+    def qpos6(self):
+        return np.array([self.d.qpos[a] for a in self.qadr] + [self.d.qpos[self.m.joint("Jaw").qposadr[0]]])
+
+    def small_image(self, size=64, camera="top"):
+        """정책 입력용 작은 카메라 사진"""
+        if getattr(self, "_small", None) is None or self._small_size != size:
+            self._small = mujoco.Renderer(self.m, size, size); self._small_size = size
+        self._small.update_scene(self.d, camera=camera)
+        return self._small.render()
 
     def home(self, seconds=1.0):
         c = self.d.ctrl.copy(); c[:5] = HOME[:5]

@@ -1,0 +1,256 @@
+<title>로봇 바리스타 3D 실습실</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{--ground:#0f1315;--surface:#161b1e;--surface-2:#1d2327;--ink:#e6ebed;--muted:#98a4aa;--line:#293237;--accent:#ffc21a;--good:#3cc07e;--bad:#ef6a64;--brew:#c08a54;
+--font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+html,body{height:100%;margin:0}body{background:var(--ground);color:var(--ink);font:14px/1.5 var(--font)}
+button,input{font:inherit;color:inherit}
+.app{box-sizing:border-box;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;padding:12px 16px 16px}
+@media (max-width:860px){.app{grid-template-columns:1fr;grid-template-rows:56vh auto;height:auto;min-height:100%}}
+#stage{position:relative;border-radius:14px;overflow:hidden;background:#1b2126;min-height:300px}
+#view{display:block;width:100%;height:100%}
+#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:rgba(14,18,21,.78);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 10px;font-family:var(--mono);font-size:13px}
+.chip b{color:var(--accent);font-weight:500}
+aside{display:flex;flex-direction:column;gap:10px;overflow:auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+h1{font-size:18px;margin:0 0 2px}h2{font-size:13px;color:var(--muted);font-weight:600;margin:0 0 8px}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);color:#182024;border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.4;cursor:default}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px;cursor:pointer;color:var(--muted)}.seg button.on{background:var(--surface-2);color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}
+label.sl{display:grid;grid-template-columns:86px 1fr 44px;align-items:center;gap:8px;font-size:13px;margin-top:6px}
+input[type=range]{accent-color:var(--accent)}
+.m{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.bar{height:8px;background:var(--surface-2);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--brew)}
+.orders{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow:auto}
+.o{display:flex;justify-content:space-between;gap:8px;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:6px 9px}
+.o .s{color:var(--muted)}.o.done{border-color:var(--good)}.o.done .s{color:var(--good)}
+.big{font-family:var(--mono);font-size:26px;font-weight:500}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.cmp div{background:var(--surface-2);border-radius:10px;padding:8px}
+.log{font-family:var(--mono);font-size:12px;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap}
+a{color:var(--accent)}
+</style>
+<!--BODY-->
+<div class="app">
+  <div id="stage"><canvas id="view"></canvas><div id="loading">3D 불러오는 중…</div>
+    <div class="hud"><span class="chip">로봇 시간 <b id="clock">0.0</b>초</span><span class="chip" id="phase">대기</span></div></div>
+  <aside>
+    <div class="card"><h1>로봇 바리스타 3D 실습실</h1>
+      <div class="muted">실제 저가 로봇팔 SO-ARM100 모델이 정해진 순서(프로그램)로 커피를 만듭니다. 실행 중 AI는 쓰지 않습니다. <a href="./">← 로봇팔 실습실</a></div></div>
+    <div class="card"><h2>1. 주문</h2>
+      <div class="row"><button class="btn primary" id="o-a">아메리카노</button><button class="btn primary" id="o-l">라떼</button><button class="btn" id="o-3">3잔 한 번에</button></div>
+      <div class="muted" style="margin-top:6px">컵 보관대 3개 · 픽업대 2칸(차면 손님이 가져감)</div></div>
+    <div class="card"><h2>2. 로봇이 일하는 방식</h2>
+      <div class="seg"><button id="m-seq" class="on">한 잔씩 끝까지</button><button id="m-pipe">머신 도는 동안 다음 일</button></div>
+      <label class="sl">에스프레소<input type="range" id="t-e" min="2" max="30" value="10"><span id="v-e">10초</span></label>
+      <label class="sl">우유<input type="range" id="t-m" min="2" max="20" value="6"><span id="v-m">6초</span></label>
+      <label class="sl">재생 속도<input type="range" id="t-s" min="1" max="4" value="2"><span id="v-s">2배</span></label></div>
+    <div class="card"><h2>3. 머신</h2>
+      <div class="m"><span>에스프레소</span><div class="bar"><i id="b-e"></i></div></div>
+      <div class="m"><span>우유</span><div class="bar"><i id="b-m"></i></div></div></div>
+    <div class="card"><h2>4. 주문 현황</h2><div class="orders" id="orders"><div class="muted">주문을 넣어 보세요</div></div></div>
+    <div class="card"><h2>5. 결과 비교 (3잔 기준)</h2>
+      <div class="cmp"><div><div class="muted">한 잔씩</div><div class="big" id="r-seq">-</div></div><div><div class="muted">동시 진행</div><div class="big" id="r-pipe">-</div></div></div>
+      <div class="muted" id="r-note" style="margin-top:6px">같은 조건으로 두 방식을 각각 「3잔 한 번에」 돌려 보세요.</div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="reset">처음 상태로</button></div></div>
+    <div class="card"><h2>기록</h2><div class="log" id="log"></div></div>
+  </aside>
+</div>
+<script id="robot-data" type="application/json"><!--ROBOT_DATA--></script>
+<script>/*KIN_JS*/</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
+const $ = (id) => document.getElementById(id);
+const D = JSON.parse($("robot-data").textContent);
+const K = RobotKin.makeKin(D);
+const { qrot, qmul, sub } = RobotKin;
+const JAW = D.jaw;
+const conj = (q) => [q[0], -q[1], -q[2], -q[3]];
+
+// ---------- 배치 (MuJoCo 장면 sim/scene_barista.xml과 같은 자리, m) ----------
+const SPOT = { rack1: [0.17, -0.08], rack2: [0.205, -0.15], rack3: [0.15, -0.22], espresso: [0, -0.245], milk: [-0.125, -0.215], pickup1: [-0.2, -0.075], pickup2: [-0.215, -0.14] };
+const CUP_R = 0.015, CUP_H = 0.04, HOVER = 0.09, GRASP = 0.025, PLACE = 0.036;
+const BREW = { espresso: 10, milk: 6 };
+const RECIPES = { "아메리카노": [["espresso", 0x3d200f]], "라떼": [["espresso", 0x3d200f], ["milk", 0xc79a6b]] };
+
+// ---------- 3D ----------
+const stage = $("stage"), canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1b2126); scene.fog = new THREE.Fog(0x1b2126, 2.4, 6);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 30); camera.up.set(0, 0, 1);
+camera.position.set(0.6, -0.12, 0.36);
+const controls = new OrbitControls(camera, canvas); controls.target.set(-0.01, -0.16, 0.04); controls.enableDamping = true; controls.screenSpacePanning = true; controls.update();
+scene.add(new THREE.HemisphereLight(0xdfe8ef, 0x262b2f, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(0.45, 0.2, 1.4); sun.target.position.set(0, -0.15, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -0.6, right: 0.6, top: 0.6, bottom: -0.6, near: 0.3, far: 3 }); sun.shadow.bias = -0.0004; scene.add(sun, sun.target);
+const box = (sx, sy, sz, x, y, z, color, rough = 0.6, metal = 0.05) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal })); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
+box(0.9, 0.8, 0.04, 0, -0.15, -0.02, 0x6b7279, 0.62);                    // 작업대
+box(0.1, 0.06, 0.16, 0, -0.315, 0.08, 0x1a1a1c, 0.35, 0.3);              // 에스프레소 몸체
+box(0.06, 0.024, 0.024, 0, -0.278, 0.135, 0x1a1a1c, 0.35, 0.3);          // 머리
+box(0.064, 0.064, 0.004, 0, -0.245, 0.002, 0x2a2c30, 0.8);               // 받침
+const espLed = box(0.036, 0.004, 0.012, 0.03, -0.284, 0.15, 0x22dd55, 0.4); espLed.material.emissive = new THREE.Color(0x0a5520);
+box(0.07, 0.05, 0.13, -0.13, -0.29, 0.065, 0x7d8288, 0.3, 0.5);          // 우유 스테이션
+box(0.056, 0.056, 0.004, -0.125, -0.215, 0.002, 0x2a2c30, 0.8);
+const milkLed = box(0.03, 0.004, 0.01, -0.13, -0.264, 0.115, 0x22dd55, 0.4); milkLed.material.emissive = new THREE.Color(0x0a5520);
+const wood = 0x8c6239;
+const rackPlate = box(0.1, 0.2, 0.004, 0.178, -0.15, 0.002, wood, 0.7); rackPlate.rotation.z = -0.21;
+box(0.07, 0.15, 0.004, -0.21, -0.11, 0.002, wood, 0.7);                  // 픽업대
+for (const k of ["pickup1", "pickup2"]) { const d = new THREE.Mesh(new THREE.CircleGeometry(0.018, 32), new THREE.MeshStandardMaterial({ color: 0x2fbf71 })); d.position.set(SPOT[k][0], SPOT[k][1], 0.0045); scene.add(d); }
+const base = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 48), new THREE.MeshStandardMaterial({ color: 0x202428, metalness: 0.4, roughness: 0.45 })); base.rotation.x = Math.PI / 2; base.position.set(0, 0, 0.004); scene.add(base);
+// 로봇 (MuJoCo 모델 모양 그대로)
+function u16(b64) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Uint16Array(u8.buffer); }
+const geos = D.meshes.map((ms) => { const v = u16(ms.v), f = u16(ms.f), pos = new Float32Array(v.length); for (let i = 0; i < v.length; i += 3) { pos[i] = ms.min[0] + v[i] * ms.scale[0]; pos[i + 1] = ms.min[1] + v[i + 1] * ms.scale[1]; pos[i + 2] = ms.min[2] + v[i + 2] * ms.scale[2]; } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(f, 1)); return toCreasedNormals(g, Math.PI / 6); });
+const matW = new THREE.MeshStandardMaterial({ color: 0xeef0ee, roughness: 0.52 }), matD = new THREE.MeshStandardMaterial({ color: 0x1c1f22, roughness: 0.38, metalness: 0.12 });
+const bodyObj = {}; for (const b of D.bodies) { const g = new THREE.Group(); scene.add(g); bodyObj[b.name] = g; }
+for (const gm of D.geoms) { const m = new THREE.Mesh(geos[gm.mesh], gm.rgba[0] > 0.5 ? matW : matD); m.position.fromArray(gm.pos); m.quaternion.set(gm.quat[1], gm.quat[2], gm.quat[3], gm.quat[0]); m.castShadow = m.receiveShadow = true; bodyObj[gm.body].add(m); }
+// 컵
+const cups = ["rack1", "rack2", "rack3"].map((k) => {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(CUP_R, CUP_R * 0.85, CUP_H, 32), new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.4 })); body.rotation.x = Math.PI / 2; body.castShadow = true;
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(CUP_R * 0.85, 32), new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.3 })); fill.position.z = CUP_H / 2 - 0.0015;
+  g.add(body, fill); scene.add(g);
+  return { g, fill, home: k, p: [SPOT[k][0], SPOT[k][1], CUP_H / 2], r: [1, 0, 0, 0] };
+});
+
+// ---------- 로봇 동작 ----------
+const S = { q: D.home.slice(), speed: 2, held: null, grip: null, busy: false };
+let F = K.fk(S.q), anim = null, clock = 0, waiters = [];
+const tip = () => K.tipOf(F);
+function animateTo(q6, sec) { return new Promise((res) => { anim = { from: S.q.slice(), to: q6, t: 0, dur: Math.max(0.05, sec), res }; }); }
+function step(dt) {
+  const d = dt * S.speed;
+  if (S.busy) clock += d;
+  if (anim) { anim.t += d; const k = Math.min(1, anim.t / anim.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; for (let i = 0; i < 6; i++) S.q[i] = anim.from[i] + (anim.to[i] - anim.from[i]) * e; if (k >= 1) { const a = anim; anim = null; a.res(); } }
+  waiters = waiters.filter((w) => { if (clock >= w.t) { w.res(); return false; } return true; });
+}
+const waitUntil = (t) => new Promise((res) => waiters.push({ t, res }));
+// 역기구학은 턱을 닫은 모양으로 풀고(집는 점 = 컵 중심), 턱 각도는 따로 (시뮬레이션 move_open_to와 같은 원리)
+async function moveTo(x, y, z, sec = 0.8) { const q = S.q.slice(); q[5] = JAW.grip; const sol = K.ik([x, y, z], q); await animateTo(sol.q.concat([S.q[5]]), sec); }
+async function jaw(v) { const q = S.q.slice(); q[5] = v; await animateTo(q, 0.35); }
+function cupAt(spot) { const [x, y] = SPOT[spot]; return cups.find((c) => c !== S.held && Math.hypot(c.p[0] - x, c.p[1] - y) < 0.012) || null; }
+async function pick(spot) {
+  const [x, y] = SPOT[spot], c = cupAt(spot);
+  await jaw(0.35); await moveTo(x, y, HOVER); await moveTo(x, y, GRASP, 0.6); await jaw(JAW.grip);
+  const fj = F.Fixed_Jaw, inv = conj(fj.r); S.grip = { p: qrot(inv, sub(c.p, fj.p)), r: qmul(inv, c.r) }; S.held = c;
+  await moveTo(x, y, HOVER, 0.6);
+}
+async function place(spot) {
+  const [x, y] = SPOT[spot]; await moveTo(x, y, HOVER); await moveTo(x, y, PLACE, 0.6);
+  const c = S.held; S.held = null; c.p = [x, y, CUP_H / 2]; c.r = [1, 0, 0, 0];
+  await jaw(0.35); await moveTo(x, y, HOVER, 0.5);
+}
+async function park() { await animateTo([1.9, -2.4, 2.4, 1.2, -1.57, S.q[5]], 0.6); }
+const fillCup = (c, color) => c.fill.material.color.setHex(color);
+
+// ---------- 주문·스케줄러 ----------
+let orders = [], mode = "seq", nextNo = 1;
+const log = (t) => { const l = $("log"); l.textContent = `[${clock.toFixed(1)}s] ${t}\n` + l.textContent; };
+function render() {
+  $("orders").innerHTML = orders.length ? orders.map((o) => `<div class="o ${o.state === "완료" ? "done" : ""}"><span>#${o.no} ${o.drink}</span><span class="s">${o.state}${o.sec ? ` · ${o.sec.toFixed(1)}초` : ""}</span></div>`).join("") : '<div class="muted">주문을 넣어 보세요</div>';
+}
+function freePickup() {
+  let p = ["pickup1", "pickup2"].find((k) => !cupAt(k));
+  if (!p) { const old = cupAt("pickup1"); old.g.visible = false; old.p = [9, 9, 0]; log("손님이 픽업대1 음료를 가져감"); p = "pickup1"; }
+  return p;
+}
+const busyM = {};
+const KO = { rack1: "보관대1", rack2: "보관대2", rack3: "보관대3", espresso: "에스프레소", milk: "우유", pickup1: "픽업대1", pickup2: "픽업대2" };
+async function moveCup(o, src, dst) { $("phase").textContent = `#${o.no} ${KO[src]} → ${KO[dst]}`; await pick(src); await place(dst); }
+function startBrew(o, st) { busyM[st] = o.no; o.at = st; o.ready = clock + BREW[st]; o.brewStart = clock; o.state = st === "espresso" ? "에스프레소 추출" : "우유 스팀"; render(); }
+
+async function runSeq() {
+  for (const o of orders.filter((o) => o.state === "대기")) {
+    o.t0 = clock; const src = o.cup.home; o.state = "만드는 중"; render();
+    let here = src;
+    for (const [st, color] of RECIPES[o.drink]) {
+      await moveCup(o, here, st); startBrew(o, st); $("phase").textContent = `#${o.no} 기다리는 중`; await park(); await waitUntil(o.ready);
+      fillCup(o.cup, color); delete busyM[st]; here = st;
+    }
+    await moveCup(o, here, freePickup()); o.state = "완료"; o.sec = clock - o.t0; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`);
+  }
+}
+async function runPipe() {
+  while (true) {
+    const live = orders.filter((o) => o.state !== "완료");
+    if (!live.length) break;
+    for (const o of live) if (o.at && o.ready !== null && clock >= o.ready && !o.filled) { fillCup(o.cup, RECIPES[o.drink][o.step][1]); o.filled = true; o.state = "다음 단계 대기"; render(); }
+    let act = null;
+    for (const o of [...live].sort((a, b) => b.step - a.step)) {
+      if (o.step < 0 || clock < o.ready) continue;
+      const steps = RECIPES[o.drink];
+      if (o.step + 1 < steps.length) { const nx = steps[o.step + 1][0]; if (busyM[nx] !== undefined) continue; act = [o, nx]; } else act = [o, freePickup()];
+      break;
+    }
+    if (!act && busyM.espresso === undefined) { const o = live.find((o) => o.step < 0); if (o) act = [o, "espresso"]; }
+    if (!act) { const w = live.filter((o) => o.ready !== null && o.ready > clock).map((o) => o.ready); if (!w.length) break; $("phase").textContent = "머신 기다리는 중"; await park(); await waitUntil(Math.min(...w)); continue; }
+    const [o, dst] = act, src = o.step < 0 ? o.cup.home : o.at;
+    if (o.step < 0) { o.t0 = clock; o.state = "만드는 중"; render(); }
+    await moveCup(o, src, dst); if (src in BREW) delete busyM[src];
+    if (dst in BREW) { o.step++; o.filled = false; startBrew(o, dst); }
+    else { o.state = "완료"; o.sec = clock - o.t0; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`); }
+  }
+}
+async function go() {
+  if (S.busy) return; S.busy = true; setBtns(); const t0 = clock;
+  try { if (mode === "seq") await runSeq(); else await runPipe(); await animateTo(D.home.slice(0, 5).concat([S.q[5]]), 0.8); }
+  finally { S.busy = false; setBtns(); $("phase").textContent = "완료"; }
+  const n = orders.filter((o) => o.batch && o.state === "완료").length;
+  if (n === 3) { const total = clock - t0; $(mode === "seq" ? "r-seq" : "r-pipe").textContent = total.toFixed(1) + "초"; log(`3잔 전체 ${total.toFixed(1)}초 (${mode === "seq" ? "한 잔씩" : "동시 진행"})`); compare(); }
+}
+function compare() {
+  const a = parseFloat($("r-seq").textContent), b = parseFloat($("r-pipe").textContent);
+  if (a && b) $("r-note").textContent = `동시 진행이 ${(a - b).toFixed(1)}초(${Math.round((a - b) / a * 100)}%) 빠릅니다. 에스프레소 머신 한 대가 병목이라, 머신 시간을 늘릴수록 차이가 커집니다.`;
+}
+function add(drinks, batch) {
+  if (S.busy) return;
+  const free = cups.filter((c) => !orders.some((o) => o.cup === c) && c.g.visible);
+  if (free.length < drinks.length) { log("컵이 모자랍니다 — 「처음 상태로」를 누르세요"); return; }
+  drinks.forEach((d, i) => orders.push({ no: nextNo++, drink: d, cup: free[i], state: "대기", step: -1, at: null, ready: null, batch }));
+  render(); go();
+}
+function reset() {
+  if (S.busy) return;
+  cups.forEach((c) => { c.g.visible = true; c.p = [SPOT[c.home][0], SPOT[c.home][1], CUP_H / 2]; c.r = [1, 0, 0, 0]; fillCup(c, 0xf4f4f1); });
+  orders = []; Object.keys(busyM).forEach((k) => delete busyM[k]); clock = 0; render(); $("phase").textContent = "대기";
+}
+function setBtns() { for (const id of ["o-a", "o-l", "o-3", "reset", "m-seq", "m-pipe"]) $(id).disabled = S.busy; }
+$("o-a").onclick = () => add(["아메리카노"]); $("o-l").onclick = () => add(["라떼"]);
+$("o-3").onclick = () => { reset(); add(["아메리카노", "라떼", "아메리카노"], true); };
+$("reset").onclick = reset;
+const setMode = (m) => { mode = m; $("m-seq").classList.toggle("on", m === "seq"); $("m-pipe").classList.toggle("on", m === "pipe"); };
+$("m-seq").onclick = () => setMode("seq"); $("m-pipe").onclick = () => setMode("pipe");
+for (const [id, key, unit] of [["t-e", "espresso", "초"], ["t-m", "milk", "초"]]) $(id).oninput = (e) => { BREW[key] = +e.target.value; $("v-" + id.slice(2)).textContent = e.target.value + unit; $("r-seq").textContent = $("r-pipe").textContent = "-"; };
+$("t-s").oninput = (e) => { S.speed = +e.target.value; $("v-s").textContent = e.target.value + "배"; };
+
+// ---------- 그리기 ----------
+function draw() {
+  F = K.fk(S.q);
+  for (const n in bodyObj) { const f = F[n], o = bodyObj[n]; o.position.set(f.p[0], f.p[1], f.p[2]); o.quaternion.set(f.r[1], f.r[2], f.r[3], f.r[0]); }
+  for (const c of cups) {
+    let p = c.p, r = c.r;
+    if (S.held === c) { const fj = F.Fixed_Jaw; p = RobotKin.add(fj.p, qrot(fj.r, S.grip.p)); r = qmul(fj.r, S.grip.r); }
+    c.g.position.set(p[0], p[1], p[2]); c.g.quaternion.set(r[1], r[2], r[3], r[0]);
+  }
+  for (const [k, led, bar] of [["espresso", espLed, "b-e"], ["milk", milkLed, "b-m"]]) {
+    const o = orders.find((o) => o.no === busyM[k]); const k01 = o ? Math.min(1, (clock - o.brewStart) / BREW[k]) : 0;
+    $(bar).style.width = (k01 * 100) + "%"; led.material.emissive.setHex(o && k01 < 1 ? 0x553300 : 0x0a5520); led.material.color.setHex(o && k01 < 1 ? 0xffaa22 : 0x22dd55);
+  }
+  $("clock").textContent = clock.toFixed(1);
+}
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+let last = performance.now();
+function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; step(dt); controls.update(); draw(); renderer.render(scene, camera); }
+draw(); $("loading").hidden = true; requestAnimationFrame(loop); render();
+window.__barista = { state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy }), run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
+</script>

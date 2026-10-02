@@ -1,0 +1,82 @@
+<mujoco model="so_arm100 robot barista">
+  <include file="so_arm100.xml"/>
+  <option timestep="0.002" cone="elliptic" impratio="10"/>
+  <visual>
+    <headlight diffuse="0.45 0.45 0.45" ambient="0.25 0.25 0.28" specular="0.1 0.1 0.1"/>
+    <quality shadowsize="4096"/>
+    <global azimuth="135" elevation="-25" offwidth="960" offheight="720"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.32 0.36 0.42" rgb2="0.08 0.09 0.11" width="512" height="512"/>
+    <texture type="2d" name="bench" builtin="checker" mark="edge" rgb1="0.42 0.44 0.47" rgb2="0.38 0.40 0.43" markrgb="0.55 0.57 0.6" width="512" height="512"/>
+    <material name="bench" texture="bench" texuniform="true" texrepeat="12 12" reflectance="0.15"/>
+    <texture type="2d" name="shop" builtin="checker" rgb1="0.18 0.19 0.21" rgb2="0.15 0.16 0.18" width="256" height="256"/>
+    <material name="shop" texture="shop" texuniform="true" texrepeat="4 4"/>
+    <material name="frame" rgba="0.12 0.13 0.15 1" reflectance="0.3"/>
+    <material name="hazard" rgba="0.95 0.75 0.1 1"/>
+    <material name="bin" rgba="0.15 0.45 0.3 1"/>
+    <material name="machine" rgba="0.1 0.1 0.11 1" reflectance="0.4"/>
+    <material name="steel" rgba="0.5 0.52 0.55 1" reflectance="0.15"/>
+    <material name="tray" rgba="0.16 0.17 0.19 1" reflectance="0.05"/>
+    <material name="cupwhite" rgba="0.95 0.95 0.93 1"/>
+    <material name="wood" rgba="0.55 0.38 0.24 1"/>
+  </asset>
+  <worldbody>
+    <light pos="0.4 0.2 1.4" dir="-0.3 -0.2 -1" directional="false" diffuse="0.8 0.8 0.78" castshadow="true" cutoff="60"/>
+    <light pos="-0.5 -0.8 1.2" dir="0.3 0.5 -1" diffuse="0.35 0.37 0.42" castshadow="false"/>
+    <!-- 공장 바닥(보이기만) -->
+    <geom type="plane" size="3 3 0.1" pos="0 0 -0.75" material="shop" contype="0" conaffinity="0"/>
+    <!-- 작업대 윗면 = 물리 바닥 z=0 -->
+    <geom name="floor" type="box" size="0.45 0.4 0.02" pos="0 -0.15 -0.02" material="bench"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="0.42 0.22 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="-0.42 0.22 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="0.42 -0.52 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.02 0.02 0.36" pos="-0.42 -0.52 -0.4" material="frame" contype="0" conaffinity="0"/>
+    <!-- 안전 구역 표시선 -->
+    <geom type="box" size="0.33 0.004 0.0005" pos="0 -0.38 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.004 0.2 0.0005" pos="0.33 -0.18 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.004 0.2 0.0005" pos="-0.33 -0.18 0.0005" material="hazard" contype="0" conaffinity="0"/>
+    <!-- 로봇 받침 -->
+    <geom type="cylinder" size="0.06 0.004" pos="0 0 0.004" material="frame" contype="0" conaffinity="0"/>
+    <camera name="front" pos="0.45 -0.55 0.4" xyaxes="0.77 0.64 0 -0.3 0.36 0.88"/>
+    <camera name="cafe" pos="0.32 0.16 0.42" xyaxes="-0.718 0.696 0.000 -0.450 -0.464 0.763"/>
+    <camera name="top" pos="0 -0.2 0.7" xyaxes="1 0 0 0 1 0"/>
+    <!-- 컵 보관대 (오른쪽) -->
+    <geom type="box" size="0.05 0.1 0.002" pos="0.178 -0.15 0.002" euler="0 0 -12" material="wood" contype="0" conaffinity="0"/>
+    <site name="rack1" pos="0.17 -0.08 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.3 0.22 0.15 1"/>
+    <site name="rack2" pos="0.205 -0.15 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.3 0.22 0.15 1"/>
+    <site name="rack3" pos="0.15 -0.22 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.3 0.22 0.15 1"/>
+    <body name="cup1" pos="0.17 -0.08 0.02">
+      <freejoint name="cup1"/>
+      <geom name="cup1" type="cylinder" size="0.015 0.02" material="cupwhite" mass="0.02" friction="1.5 0.02 0.001" condim="4"/>
+      <geom name="cup1_fill" type="cylinder" size="0.0125 0.0015" pos="0 0 0.0195" rgba="0.98 0.98 0.97 1" contype="0" conaffinity="0" mass="0.0001"/>
+    </body>
+    <body name="cup2" pos="0.205 -0.15 0.02">
+      <freejoint name="cup2"/>
+      <geom name="cup2" type="cylinder" size="0.015 0.02" material="cupwhite" mass="0.02" friction="1.5 0.02 0.001" condim="4"/>
+      <geom name="cup2_fill" type="cylinder" size="0.0125 0.0015" pos="0 0 0.0195" rgba="0.98 0.98 0.97 1" contype="0" conaffinity="0" mass="0.0001"/>
+    </body>
+    <body name="cup3" pos="0.15 -0.22 0.02">
+      <freejoint name="cup3"/>
+      <geom name="cup3" type="cylinder" size="0.015 0.02" material="cupwhite" mass="0.02" friction="1.5 0.02 0.001" condim="4"/>
+      <geom name="cup3_fill" type="cylinder" size="0.0125 0.0015" pos="0 0 0.0195" rgba="0.98 0.98 0.97 1" contype="0" conaffinity="0" mass="0.0001"/>
+    </body>
+    <!-- 에스프레소 머신: 몸체는 컵 자리 뒤, 노즐·받침은 보이기만 -->
+    <geom name="espresso_body" type="box" size="0.05 0.03 0.08" pos="0.0 -0.315 0.08" material="machine"/>
+    <!-- 머신 머리는 컵 뒤까지만, 노즐은 컵 뒤쪽 위에서 비스듬히 (위 카메라가 컵 전체를 보도록) -->
+    <geom type="box" size="0.03 0.012 0.012" pos="0.0 -0.278 0.135" material="machine" contype="0" conaffinity="0"/>
+    <geom type="cylinder" size="0.004 0.012" pos="0.0 -0.266 0.115" euler="25 0 0" material="machine" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.032 0.032 0.002" pos="0.0 -0.245 0.002" material="tray" contype="0" conaffinity="0"/>
+    <site name="espresso" pos="0.0 -0.245 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.45 0.47 0.5 1"/>
+    <geom type="box" size="0.018 0.002 0.006" pos="0.03 -0.284 0.15" rgba="0.15 0.85 0.3 1" contype="0" conaffinity="0"/>
+    <!-- 우유 스테이션 -->
+    <geom name="milk_body" type="box" size="0.035 0.025 0.065" pos="-0.13 -0.29 0.065" material="steel"/>
+    <geom type="cylinder" size="0.004 0.014" pos="-0.125 -0.24 0.1" euler="25 0 0" material="machine" contype="0" conaffinity="0"/>
+    <geom type="box" size="0.028 0.028 0.002" pos="-0.125 -0.215 0.002" material="tray" contype="0" conaffinity="0"/>
+    <site name="milk" pos="-0.125 -0.215 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.45 0.47 0.5 1"/>
+    <!-- 픽업대 (왼쪽) -->
+    <geom type="box" size="0.035 0.075 0.002" pos="-0.21 -0.11 0.002" material="wood" contype="0" conaffinity="0"/>
+    <site name="pickup1" pos="-0.20 -0.075 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.15 0.6 0.3 1"/>
+    <site name="pickup2" pos="-0.215 -0.14 0.0045" size="0.018 0.0005" type="cylinder" rgba="0.15 0.6 0.3 1"/>
+  </worldbody>
+</mujoco>

@@ -42,3 +42,31 @@ fs.mkdirSync(docs, { recursive: true });
 fs.writeFileSync(path.join(docs, "index.html"), standalone);
 const kb = (f) => (fs.statSync(f).size / 1024).toFixed(0) + " KB";
 console.log(`web/dist/robot-arm-lab.html ${kb(path.join(here, "dist", "robot-arm-lab.html"))} · docs/index.html ${kb(path.join(docs, "index.html"))}`);
+
+// ---- 로봇 바리스타 (2026-10-02): barista.html → docs/barista.html ----
+{
+  const app2 = read("barista.html").replace("<!--ROBOT_DATA-->", () => data).replace("/*KIN_JS*/", () => kin);
+  const [h2, b2] = app2.split("<!--BODY-->");
+  const d2 = "SO-ARM100 로봇팔이 정해진 프로그램으로 커피를 만드는 3D 실습실 — 한 잔씩 vs 머신이 도는 동안 다음 일, 사이클 타임 비교";
+  const page = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="${d2}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="로봇 바리스타 3D 실습실">
+<meta property="og:description" content="${d2}">
+<meta property="og:url" content="${PAGES}barista.html">
+<meta property="og:image" content="${PAGES}barista.png">
+<style>[hidden]{display:none!important}</style>
+${h2.trim()}
+</head>
+<body>
+${b2.trim()}
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(docs, "barista.html"), page);
+  console.log(`docs/barista.html ${kb(path.join(docs, "barista.html"))}`);
+}

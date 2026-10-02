@@ -65,3 +65,82 @@ def find_cubes(image, camera=None):
             xyz[2] = 0.015
             found.append({"color": color, "xyz": xyz, "px": n})
     return found
+
+
+# ---- 컵 찾기 (로봇 바리스타, 2026-10-02) ----
+# 컵은 흰색이고 윗면 가운데는 음료 색으로 바뀐다 → 흰 테두리(밝고 색 차이 작은 픽셀)의 중심 = 컵 중심.
+# 흰 로봇팔과 헷갈리지 않게, 찾을 자리 주변(반경 3.5cm)만 본다. 팔은 「보는 자세」로 접혀 있어야 한다.
+CUP_TOP = 0.04
+
+
+def to_pixel(camera, x, y, z=CUP_TOP):
+    d = camera.pos[2] - z
+    return camera.w / 2 + (x - camera.pos[0]) * camera.f / d, camera.h / 2 - (y - camera.pos[1]) * camera.f / d
+
+
+def _label(mask):
+    """연결 영역 번호 매기기 (4-이웃). blobs()와 같은 방식이지만 픽셀 소속을 돌려준다"""
+    lab = np.zeros(mask.shape, int)
+    n = 0
+    for y0, x0 in zip(*np.nonzero(mask)):
+        if lab[y0, x0]:
+            continue
+        n += 1
+        stack = [(y0, x0)]; lab[y0, x0] = n
+        while stack:
+            y, x = stack.pop()
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < mask.shape[0] and 0 <= nx < mask.shape[1] and mask[ny, nx] and not lab[ny, nx]:
+                    lab[ny, nx] = n; stack.append((ny, nx))
+    return lab, n
+
+
+def find_cup_near(image, xy, radius=0.035, camera=None, cup_r=0.015):
+    """자리 xy 근처 컵의 중심 좌표(m). 없으면 None.
+    흰 테두리의 바깥 경계에 반지름을 아는 원을 맞춘다 → 노즐이 컵 일부를 가려도 남은 호로 중심을 찾는다(2026-10-02:
+    단순 평균은 노즐 그늘 때문에 4~6mm 치우침)."""
+    camera = camera or TopCamera(width=image.shape[1], height=image.shape[0])
+    u0, v0 = to_pixel(camera, xy[0], xy[1])
+    k = camera.f / (camera.pos[2] - CUP_TOP)
+    rpx, R = radius * k, cup_r * k
+    hgt, wid = image.shape[:2]
+    yy, xx = np.mgrid[0:hgt, 0:wid]
+    near = (xx - u0) ** 2 + (yy - v0) ** 2 < rpx ** 2
+    im = image.astype(int)
+    hi, lo = im.max(axis=2), im.min(axis=2)
+    white = near & (lo > 215) & (hi - lo < 25)
+    if white.sum() < 40:
+        return None
+    # 흰 덩어리가 여럿이면(접힌 로봇팔 끝 등) 자리 중심에 가장 가까운 큰 덩어리만 (2026-10-02)
+    lab, n = _label(white)
+    if n > 1:
+        best, bd = 0, 1e9
+        for i in range(1, n + 1):
+            vv, uu = np.nonzero(lab == i)
+            if len(vv) < 40:
+                continue
+            dist = np.hypot(uu.mean() - u0, vv.mean() - v0)
+            if dist < bd:
+                best, bd = i, dist
+        if best == 0:
+            return None
+        white = lab == best
+    # 경계 픽셀: 흰데 이웃 중 하나라도 흰색이 아님
+    pad = np.pad(white, 1)
+    inner = pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:]
+    edge = white & ~inner
+    v, u = np.nonzero(edge)
+    pts = np.stack([u, v], 1).astype(float)
+    c = pts.mean(0)
+    for _ in range(30):  # 반지름 R인 원을 바깥 경계에 맞추기(안쪽 음료 경계는 제외)
+        d = np.linalg.norm(pts - c, axis=1) + 1e-9
+        outer = d > 0.85 * R
+        if outer.sum() < 15:
+            return None
+        q = pts[outer]; dq = d[outer][:, None]
+        c = (q - R * (q - c) / dq).mean(0)
+    resid = np.abs(np.linalg.norm(pts[outer] - c, axis=1) - R).mean()
+    if resid > 2.5:  # 원 모양이 아니면(반사·다른 물체) 컵이 아님
+        return None
+    return camera.to_world(c[0], c[1], z=CUP_TOP)[:2]
