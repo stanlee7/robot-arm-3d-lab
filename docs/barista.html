@@ -46,18 +46,42 @@ input[type=range]{accent-color:var(--accent)}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.cmp div{background:var(--surface-2);border-radius:10px;padding:8px}
 .log{font-family:var(--mono);font-size:12px;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap}
 a{color:var(--accent)}
+.kbtn{cursor:pointer;color:var(--ink)}.kbtn.on{border-color:var(--accent);color:var(--accent)}
+.board{position:absolute;right:12px;top:12px;display:grid;grid-template-columns:auto auto;gap:4px 12px;background:rgba(14,18,21,.85);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 12px;font-size:12px;min-width:150px}
+.board b{font-family:var(--mono);font-size:15px;font-weight:500}.board .rd{color:var(--good)}.board .hd{color:var(--muted)}
+.kiosk{position:absolute;right:12px;bottom:12px;width:250px;background:#07090a;border:1px solid #2c3438;border-radius:18px;padding:8px 8px 14px;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.kiosk[hidden]{display:none}
+.ks{background:#fbfaf7;color:#1c2226;border-radius:12px;padding:12px;min-height:236px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.ks button{color:#1c2226}
+.kh{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px}
+.km{color:#6b7479;font-size:12px;font-weight:400}
+.menu{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mi{border:1px solid #e3dfd5;border-radius:10px;background:#fff;padding:10px 6px 8px;cursor:pointer;text-align:center}
+.mi:hover{border-color:#e0a800}.mi b{display:block}
+.cupi{width:30px;height:34px;margin:0 auto 6px;border-radius:3px 3px 9px 9px;border:3px solid #e9e6df;border-top-width:5px}
+.cart{flex:1;display:flex;flex-direction:column;gap:4px;min-height:44px}
+.ci{display:flex;justify-content:space-between;align-items:center}
+.ci button{width:24px;height:24px;border:1px solid #d9d5cb;background:#fff;border-radius:6px;cursor:pointer;padding:0}
+.pay{background:var(--accent);border:0;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;color:#182024!important}
+.pay:disabled{background:#e6e3dc;color:#8a9296!important;cursor:default}
+.kno{font-family:var(--mono);font-size:54px;font-weight:500;text-align:center;line-height:1.1;margin:14px 0 4px;color:#1c2226}
+.kwarn{color:#c0392b;font-size:12px}
+@media (max-width:860px){.kiosk{left:12px;right:12px;width:auto;bottom:12px}.ks{min-height:0}.board{top:auto;bottom:12px;left:12px;right:auto}}
 </style>
 </head>
 <body>
 <div class="app">
   <div id="stage"><canvas id="view"></canvas><div id="loading">3D 불러오는 중…</div>
-    <div class="hud"><span class="chip">로봇 시간 <b id="clock">0.0</b>초</span><span class="chip" id="phase">대기</span></div></div>
+    <div class="hud"><span class="chip">로봇 시간 <b id="clock">0.0</b>초</span><span class="chip" id="phase">대기</span><button class="chip kbtn on" id="k-toggle">키오스크</button></div>
+    <div class="board" id="board"></div>
+    <div class="kiosk" id="kiosk"><div class="ks" id="ks"></div></div></div>
   <aside>
     <div class="card"><h1>로봇 바리스타 3D 실습실</h1>
       <div class="muted">실제 저가 로봇팔 SO-ARM100 모델이 정해진 순서(프로그램)로 커피를 만듭니다. 실행 중 AI는 쓰지 않습니다. <a href="./">← 로봇팔 실습실</a></div></div>
     <div class="card"><h2>1. 주문</h2>
       <div class="row"><button class="btn primary" id="o-a">아메리카노</button><button class="btn primary" id="o-l">라떼</button><button class="btn" id="o-3">3잔 한 번에</button></div>
-      <div class="muted" style="margin-top:6px">컵 보관대 3개 · 픽업대 2칸(차면 손님이 가져감)</div></div>
+      <div class="muted" style="margin-top:6px">컵 보관대 3개 · 픽업대 2칸(차면 손님이 가져감)</div>
+      <div class="muted" style="margin-top:4px">화면 속 <b>키오스크</b>로 주문하면 로봇이 일하는 중에도 주문이 쌓이고, 오른쪽 위 픽업 화면에 번호가 뜹니다.</div></div>
     <div class="card"><h2>2. 로봇이 일하는 방식</h2>
       <div class="seg"><button id="m-seq" class="on">한 잔씩 끝까지</button><button id="m-pipe">머신 도는 동안 다음 일</button></div>
       <label class="sl">에스프레소<input type="range" id="t-e" min="2" max="30" value="10"><span id="v-e">10초</span></label>
@@ -293,6 +317,7 @@ const fillCup = (c, color) => c.fill.material.color.setHex(color);
 let orders = [], mode = "seq", nextNo = 1;
 const log = (t) => { const l = $("log"); l.textContent = `[${clock.toFixed(1)}s] ${t}\n` + l.textContent; };
 function render() {
+  if ($("ks")) { kRender(); boardRender(); }
   $("orders").innerHTML = orders.length ? orders.map((o) => `<div class="o ${o.state === "완료" ? "done" : ""}"><span>#${o.no} ${o.drink}</span><span class="s">${o.state}${o.sec ? ` · ${o.sec.toFixed(1)}초` : ""}</span></div>`).join("") : '<div class="muted">주문을 넣어 보세요</div>';
 }
 function freePickup() {
@@ -306,14 +331,15 @@ async function moveCup(o, src, dst) { $("phase").textContent = `#${o.no} ${KO[sr
 function startBrew(o, st) { busyM[st] = o.no; o.at = st; o.ready = clock + BREW[st]; o.brewStart = clock; o.state = st === "espresso" ? "에스프레소 추출" : "우유 스팀"; render(); }
 
 async function runSeq() {
-  for (const o of orders.filter((o) => o.state === "대기")) {
+  let o;
+  while ((o = orders.find((o) => o.state === "대기"))) {
     o.t0 = clock; const src = o.cup.home; o.state = "만드는 중"; render();
     let here = src;
     for (const [st, color] of RECIPES[o.drink]) {
       await moveCup(o, here, st); startBrew(o, st); $("phase").textContent = `#${o.no} 기다리는 중`; await park(); await waitUntil(o.ready);
       fillCup(o.cup, color); delete busyM[st]; here = st;
     }
-    await moveCup(o, here, freePickup()); o.state = "완료"; o.sec = clock - o.t0; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`);
+    await moveCup(o, here, freePickup()); o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`);
   }
 }
 async function runPipe() {
@@ -334,26 +360,88 @@ async function runPipe() {
     if (o.step < 0) { o.t0 = clock; o.state = "만드는 중"; render(); }
     await moveCup(o, src, dst); if (src in BREW) delete busyM[src];
     if (dst in BREW) { o.step++; o.filled = false; startBrew(o, dst); }
-    else { o.state = "완료"; o.sec = clock - o.t0; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`); }
+    else { o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`); }
   }
 }
 async function go() {
   if (S.busy) return; S.busy = true; setBtns(); const t0 = clock;
-  try { if (mode === "seq") await runSeq(); else await runPipe(); await animateTo(D.home.slice(0, 5).concat([S.q[5]]), 0.8); }
+  try {
+    while (orders.some((o) => o.state === "대기")) { if (mode === "seq") await runSeq(); else await runPipe(); }
+    await animateTo(D.home.slice(0, 5).concat([S.q[5]]), 0.8);
+  }
   finally { S.busy = false; setBtns(); $("phase").textContent = "완료"; }
+  if (orders.some((o) => o.state === "대기")) { go(); return; }
   const n = orders.filter((o) => o.batch && o.state === "완료").length;
-  if (n === 3) { const total = clock - t0; $(mode === "seq" ? "r-seq" : "r-pipe").textContent = total.toFixed(1) + "초"; log(`3잔 전체 ${total.toFixed(1)}초 (${mode === "seq" ? "한 잔씩" : "동시 진행"})`); compare(); }
+  if (n === 3 && !orders.some((o) => !o.batch)) { const total = clock - t0; $(mode === "seq" ? "r-seq" : "r-pipe").textContent = total.toFixed(1) + "초"; log(`3잔 전체 ${total.toFixed(1)}초 (${mode === "seq" ? "한 잔씩" : "동시 진행"})`); compare(); }
 }
 function compare() {
   const a = parseFloat($("r-seq").textContent), b = parseFloat($("r-pipe").textContent);
   if (a && b) $("r-note").textContent = `동시 진행이 ${(a - b).toFixed(1)}초(${Math.round((a - b) / a * 100)}%) 빠릅니다. 에스프레소 머신 한 대가 병목이라, 머신 시간을 늘릴수록 차이가 커집니다.`;
 }
+// 주문이 끝나지 않은 컵만 「사용 중」. 손님이 가져간 컵·픽업대에 남은 컵은 새 주문 때 보관대로 보충한다.
+const freeCups = () => cups.filter((c) => c !== S.held && !orders.some((o) => o.cup === c && o.state !== "완료"));
+const atHome = (c) => c.g.visible && cupAt(c.home) === c;
 function add(drinks, batch) {
-  if (S.busy) return;
-  const free = cups.filter((c) => !orders.some((o) => o.cup === c) && c.g.visible);
-  if (free.length < drinks.length) { log("컵이 모자랍니다 — 「처음 상태로」를 누르세요"); return; }
-  drinks.forEach((d, i) => orders.push({ no: nextNo++, drink: d, cup: free[i], state: "대기", step: -1, at: null, ready: null, batch }));
-  render(); go();
+  const free = freeCups().sort((a, b) => atHome(b) - atHome(a));
+  if (free.length < drinks.length) { log("컵이 모자랍니다 — 만들던 음료가 끝나면 다시 주문하세요"); return false; }
+  drinks.forEach((d, i) => {
+    const c = free[i];
+    if (!atHome(c)) {
+      if (c.g.visible) log(`손님이 ${KO[["pickup1", "pickup2"].find((k) => cupAt(k) === c)] || "픽업대"} 음료를 가져감`);
+      c.g.visible = true; c.p = [SPOT[c.home][0], SPOT[c.home][1], CUP_H / 2]; c.r = [1, 0, 0, 0]; fillCup(c, 0xf4f4f1); log(`직원이 ${KO[c.home]}에 새 컵 보충`);
+    }
+    orders.push({ no: nextNo++, drink: d, cup: c, state: "대기", step: -1, at: null, ready: null, batch });
+  });
+  render(); go(); return true;
+}
+
+// ---------- 키오스크·픽업 화면 ----------
+const MENU = { "아메리카노": { price: 2000, color: "#3d200f" }, "라떼": { price: 2500, color: "#c79a6b" } };
+const cart = { "아메리카노": 0, "라떼": 0 };
+let kView = "menu", kNos = [], kTimer = null;
+const batchRunning = () => orders.some((o) => o.batch && o.state !== "완료");
+function kRender() {
+  const ks = $("ks"), n = cart["아메리카노"] + cart["라떼"], cap = freeCups().length;
+  if (kView === "done") {
+    ks.innerHTML = `<div class="kh"><span>주문 완료</span><span class="km">결제는 데모라 생략</span></div><div class="km" style="text-align:center">주문번호</div>
+      <div class="kno">${kNos.map((x) => String(x).padStart(2, "0")).join(" ")}</div><div class="km" style="text-align:center">오른쪽 위 픽업 화면에 번호가 뜨면 가져가세요</div>`;
+    return;
+  }
+  const total = Object.entries(cart).reduce((s, [k, v]) => s + v * MENU[k].price, 0);
+  const lock = batchRunning();
+  ks.innerHTML = `<div class="kh"><span>로봇 카페</span><span class="km">지금 주문 가능 ${cap}잔</span></div>
+    <div class="menu">${Object.entries(MENU).map(([k, m]) => `<button class="mi" data-add="${k}"><div class="cupi" style="background:${m.color}"></div><b>${k}</b><span class="km">${m.price.toLocaleString()}원</span></button>`).join("")}</div>
+    <div class="cart">${n ? Object.entries(cart).filter(([, v]) => v).map(([k, v]) => `<div class="ci"><span>${k}</span><span><button data-dec="${k}">−</button> ${v} <button data-add="${k}">+</button></span></div>`).join("") : '<div class="km">메뉴를 눌러 담으세요 (데모 가격)</div>'}
+    ${lock ? '<div class="kwarn">3잔 비교 실험 중에는 주문을 받지 않아요</div>' : n > cap ? `<div class="kwarn">컵이 ${cap}개 남아 ${cap}잔까지 주문할 수 있어요</div>` : ""}</div>
+    <button class="pay" id="k-pay" ${n && n <= cap && !lock ? "" : "disabled"}>${n ? `${total.toLocaleString()}원 주문하기` : "주문하기"}</button>`;
+}
+$("ks").onclick = (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.add) cart[b.dataset.add]++;
+  else if (b.dataset.dec) cart[b.dataset.dec] = Math.max(0, cart[b.dataset.dec] - 1);
+  else if (b.id === "k-pay") {
+    const drinks = Object.entries(cart).flatMap(([k, v]) => Array(v).fill(k)), first = nextNo;
+    if (!add(drinks, false)) return;
+    kNos = drinks.map((_, i) => first + i); for (const k in cart) cart[k] = 0;
+    log(`키오스크 주문 ${kNos.map((x) => "#" + x).join(" ")}`);
+    kView = "done"; clearTimeout(kTimer); kTimer = setTimeout(() => { kView = "menu"; kRender(); }, 3500);
+  }
+  kRender();
+};
+$("k-toggle").onclick = () => { const k = $("kiosk"); k.hidden = !k.hidden; $("k-toggle").classList.toggle("on", !k.hidden); };
+if (innerWidth < 860) { $("kiosk").hidden = true; $("k-toggle").classList.remove("on"); }
+const onPickup = (o) => ["pickup1", "pickup2"].some((k) => cupAt(k) === o.cup) && !orders.some((x) => x.cup === o.cup && x.no > o.no);
+function boardRender() {
+  const making = orders.filter((o) => o.state !== "완료").map((o) => o.no);
+  const ready = orders.filter((o) => o.state === "완료" && onPickup(o)).map((o) => o.no);
+  const f = (a) => a.length ? a.map((x) => String(x).padStart(2, "0")).join(" ") : "-";
+  $("board").innerHTML = `<span class="hd">준비 중</span><span class="hd">픽업하세요</span><b>${f(making)}</b><b class="rd">${f(ready)}</b>`;
+}
+// 픽업대 음료는 로봇 시간 8초 뒤 손님이 가져간다
+function takeAway() {
+  for (const o of orders) if (o.state === "완료" && o.doneAt !== undefined && !o.taken && clock - o.doneAt > 8 && onPickup(o)) {
+    o.taken = true; o.cup.g.visible = false; o.cup.p = [9, 9, 0]; log(`손님이 #${o.no} ${o.drink}를 가져감`); render();
+  }
 }
 function reset() {
   if (S.busy) return;
@@ -383,13 +471,14 @@ function draw() {
     $(bar).style.width = (k01 * 100) + "%"; led.material.emissive.setHex(o && k01 < 1 ? 0x553300 : 0x0a5520); led.material.color.setHex(o && k01 < 1 ? 0xffaa22 : 0x22dd55);
   }
   $("clock").textContent = clock.toFixed(1);
+  takeAway();
 }
 function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage); resize();
 let last = performance.now();
 function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; step(dt); controls.update(); draw(); renderer.render(scene, camera); }
 draw(); $("loading").hidden = true; requestAnimationFrame(loop); render();
-window.__barista = { state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy }), run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
+window.__barista = { state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy, board: $("board").textContent }), kiosk: (list) => { for (const d of list) cart[d]++; kRender(); $("k-pay").click(); }, run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
 </script>
 </body>
 </html>
