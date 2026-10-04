@@ -370,7 +370,8 @@ function draw() {
 function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage); resize();
 let last = performance.now();
-function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; step(dt); controls.update(); draw(); renderer.render(scene, camera); }
+let MANUAL = false;  // 영상 녹화용: 시간을 직접 넘김(__barista.advance)
+function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; if (!MANUAL) step(dt); controls.update(); draw(); renderer.render(scene, camera); }
 draw(); $("loading").hidden = true; requestAnimationFrame(loop); render();
-window.__barista = { state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy, board: $("board").textContent }), kiosk: (list) => { for (const d of list) cart[d]++; kRender(); $("k-pay").click(); }, run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
+window.__barista = { manual: (on) => { MANUAL = on; }, advance: async (sec) => { for (let t = 0; t < sec; t += 0.02) { step(0.02); await Promise.resolve(); } controls.update(); draw(); renderer.render(scene, camera); }, state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy, board: $("board").textContent }), kiosk: (list) => { for (const d of list) cart[d]++; kRender(); $("k-pay").click(); }, run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
 </script>

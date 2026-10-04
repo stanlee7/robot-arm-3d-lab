@@ -70,3 +70,31 @@ ${b2.trim()}
   fs.writeFileSync(path.join(docs, "barista.html"), page);
   console.log(`docs/barista.html ${kb(path.join(docs, "barista.html"))}`);
 }
+
+// ---- 손으로 집는 로봇팔 (2026-10-04): hand.html → docs/hand.html ----
+{
+  const app3 = read("hand.html").replace("<!--ROBOT_DATA-->", () => data).replace("/*KIN_JS*/", () => kin);
+  const [h3, b3] = app3.split("<!--BODY-->");
+  const d3 = "웹캠 손 인식으로 SO-ARM100 로봇팔 모델을 움직여 공을 집어 옮기는 브라우저 실습 — 영상은 기기 밖으로 나가지 않음";
+  const page = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="${d3}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="손으로 집는 로봇팔">
+<meta property="og:description" content="${d3}">
+<meta property="og:url" content="${PAGES}hand.html">
+<meta property="og:image" content="${PAGES}hand.png">
+<style>[hidden]{display:none!important}</style>
+${h3.trim()}
+</head>
+<body>
+${b3.trim()}
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(docs, "hand.html"), page);
+  console.log(`docs/hand.html ${kb(path.join(docs, "hand.html"))}`);
+}

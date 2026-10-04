@@ -1,0 +1,211 @@
+<title>손으로 집는 로봇팔</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{--ground:#0f1315;--surface:#161b1e;--surface-2:#1d2327;--ink:#e6ebed;--muted:#98a4aa;--line:#293237;--accent:#ffc21a;--good:#3cc07e;--bad:#ef6a64;
+--font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+html,body{height:100%;margin:0}body{background:var(--ground);color:var(--ink);font:14px/1.5 var(--font)}
+button{font:inherit;color:inherit}
+.app{box-sizing:border-box;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;padding:12px 16px 16px}
+@media (max-width:860px){.app{grid-template-columns:1fr;grid-template-rows:60vh auto;height:auto;min-height:100%}}
+#stage{position:relative;border-radius:14px;overflow:hidden;background:#1b2126;min-height:300px;touch-action:none}
+#view{display:block;width:100%;height:100%}
+#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap;z-index:2}
+.chip{background:rgba(14,18,21,.8);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 10px;font-family:var(--mono);font-size:13px}
+.chip b{color:var(--accent);font-weight:500}
+#cam{position:absolute;right:12px;bottom:12px;width:220px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,.14);z-index:2}
+#cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#cam canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+#cam[hidden]{display:none}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--good);color:#0f1315;font-weight:700;padding:8px 14px;border-radius:10px;z-index:3;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+aside{display:flex;flex-direction:column;gap:10px;overflow:auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+h1{font-size:18px;margin:0 0 2px}h2{font-size:13px;color:var(--muted);font-weight:600;margin:0 0 8px}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);color:#182024;border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.4;cursor:default}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px;cursor:pointer;color:var(--muted)}.seg button.on{background:var(--accent);color:#182024;font-weight:700}
+.stat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.stat div{background:var(--surface-2);border-radius:10px;padding:8px}.stat b{display:block;font-family:var(--mono);font-size:22px;font-weight:500;color:var(--accent)}
+.steps{margin:0;padding-left:18px}.steps li{margin:4px 0}
+.log{font-family:var(--mono);font-size:12px;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap}
+a{color:var(--accent)}
+.grip{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);vertical-align:-1px;margin-right:4px}.grip.on{background:var(--good)}
+</style>
+<!--BODY-->
+<div class="app">
+  <div id="stage"><canvas id="view"></canvas><div id="loading">3D 불러오는 중…</div>
+    <div class="hud"><span class="chip"><span class="grip" id="gripdot"></span><span id="phase">카메라를 켜거나 화면을 터치하세요</span></span><span class="chip">손 <b id="hand">-</b></span></div>
+    <div id="cam" hidden><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+    <div class="toast" id="toast">성공!</div></div>
+  <aside>
+    <div class="card"><h1>손으로 집는 로봇팔</h1>
+      <div class="muted">웹캠 앞에서 손을 움직이면 실제 저가 로봇팔 SO-ARM100 모델이 손을 따라갑니다. <b>엄지와 검지를 모으면 집고, 펴면 놓습니다.</b> 영상은 이 기기 안에서만 처리되고 어디로도 보내지 않습니다. <a href="./">← 로봇팔 실습실</a></div></div>
+    <div class="card"><h2>1. 조작 방식</h2>
+      <div class="seg"><button id="m-hand" class="on">웹캠 손 인식</button><button id="m-touch">터치·마우스</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn primary" id="start">카메라 켜기</button><button class="btn" id="reset">공 다시 놓기</button></div>
+      <div class="muted" id="hint" style="margin-top:6px">카메라 허용 뒤 손바닥을 카메라에 보이세요. 손을 좌우·앞뒤로 움직이면 로봇팔 끝이 따라갑니다.</div></div>
+    <div class="card"><h2>2. 과제: 공을 집어 초록 원에 놓기</h2>
+      <div class="stat"><div><b id="score">0</b>성공</div><div><b id="tries">0</b>집기 시도</div><div><b id="time">0.0</b>초</div></div>
+      <ol class="steps muted" style="margin-top:8px"><li>손을 움직여 집게를 공 위로</li><li>엄지·검지를 모아 집기 (터치 모드: 길게 누르기)</li><li>초록 원 위에서 손을 펴 놓기</li></ol></div>
+    <div class="card"><h2>3. 무엇이 일어나나</h2>
+      <div class="muted">손 21개 점 중 검지 끝 위치를 작업대 좌표(x, y)로 바꾸고, 로봇팔은 <b>역기구학</b>으로 관절 5개 각도를 스스로 풉니다. 집기 판정은 집게를 닫았을 때 집게 중심과 공 사이 거리가 2cm 안인가로 합니다. 피지컬 AI의 앞단(사람 동작 읽기)과 뒷단(로봇 제어)이 한 화면에 있습니다.</div></div>
+    <div class="card"><h2>기록</h2><div class="log" id="log"></div></div>
+  </aside>
+</div>
+<script id="robot-data" type="application/json"><!--ROBOT_DATA--></script>
+<script>/*KIN_JS*/</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
+const $ = (id) => document.getElementById(id);
+const D = JSON.parse($("robot-data").textContent);
+const K = RobotKin.makeKin(D);
+const { qrot, qmul, sub } = RobotKin;
+const JAW = D.jaw;
+const conj = (q) => [q[0], -q[1], -q[2], -q[3]];
+
+// ---------- 작업 공간 (m) ----------
+const WS = { xmin: -0.22, xmax: 0.22, ymin: -0.30, ymax: -0.08 };   // 손이 움직일 수 있는 작업대 범위
+const HOVER = 0.08, GRASP = 0.022, BALL_R = 0.016, TARGET = [-0.15, -0.14], GRAB_DIST = 0.02;
+const log = (t) => { const l = $("log"); l.textContent = `${t}\n` + l.textContent; };
+
+// ---------- 3D ----------
+const stage = $("stage"), canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1b2126); scene.fog = new THREE.Fog(0x1b2126, 2.4, 6);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 30); camera.up.set(0, 0, 1);
+camera.position.set(0.02, -0.72, 0.42);
+const controls = new OrbitControls(camera, canvas); controls.target.set(0, -0.17, 0.03); controls.enableDamping = true; controls.enabled = false; controls.update();
+scene.add(new THREE.HemisphereLight(0xdfe8ef, 0x262b2f, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(0.45, 0.2, 1.4); sun.target.position.set(0, -0.15, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -0.6, right: 0.6, top: 0.6, bottom: -0.6, near: 0.3, far: 3 }); sun.shadow.bias = -0.0004; scene.add(sun, sun.target);
+const box = (sx, sy, sz, x, y, z, color, rough = 0.6, metal = 0.05) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal })); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
+box(0.9, 0.8, 0.04, 0, -0.15, -0.02, 0x6b7279, 0.62);                                   // 작업대
+const area = new THREE.Mesh(new THREE.PlaneGeometry(WS.xmax - WS.xmin, WS.ymax - WS.ymin), new THREE.MeshStandardMaterial({ color: 0x3a4249, roughness: 0.9, transparent: true, opacity: 0.55 }));
+area.position.set((WS.xmin + WS.xmax) / 2, (WS.ymin + WS.ymax) / 2, 0.0015); area.receiveShadow = true; scene.add(area);  // 손이 닿는 범위
+const ring = new THREE.Mesh(new THREE.RingGeometry(0.03, 0.04, 48), new THREE.MeshStandardMaterial({ color: 0x2fbf71, emissive: 0x0a5520, side: THREE.DoubleSide })); ring.position.set(TARGET[0], TARGET[1], 0.003); scene.add(ring);
+const base = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 48), new THREE.MeshStandardMaterial({ color: 0x202428, metalness: 0.4, roughness: 0.45 })); base.rotation.x = Math.PI / 2; base.position.set(0, 0, 0.004); scene.add(base);
+function u16(b64) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Uint16Array(u8.buffer); }
+const geos = D.meshes.map((ms) => { const v = u16(ms.v), f = u16(ms.f), pos = new Float32Array(v.length); for (let i = 0; i < v.length; i += 3) { pos[i] = ms.min[0] + v[i] * ms.scale[0]; pos[i + 1] = ms.min[1] + v[i + 1] * ms.scale[1]; pos[i + 2] = ms.min[2] + v[i + 2] * ms.scale[2]; } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(f, 1)); return toCreasedNormals(g, Math.PI / 6); });
+const matW = new THREE.MeshStandardMaterial({ color: 0xeef0ee, roughness: 0.52 }), matD = new THREE.MeshStandardMaterial({ color: 0x1c1f22, roughness: 0.38, metalness: 0.12 });
+const bodyObj = {}; for (const b of D.bodies) { const g = new THREE.Group(); scene.add(g); bodyObj[b.name] = g; }
+for (const gm of D.geoms) { const m = new THREE.Mesh(geos[gm.mesh], gm.rgba[0] > 0.5 ? matW : matD); m.position.fromArray(gm.pos); m.quaternion.set(gm.quat[1], gm.quat[2], gm.quat[3], gm.quat[0]); m.castShadow = m.receiveShadow = true; bodyObj[gm.body].add(m); }
+// 공
+const ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 32, 24), new THREE.MeshStandardMaterial({ color: 0xef6a64, roughness: 0.35 })); ball.castShadow = true; scene.add(ball);
+const B = { p: [0.12, -0.2, BALL_R], held: false, grip: null };
+// 손 위치 표시(작업대 위 작은 원)
+const cursor = new THREE.Mesh(new THREE.RingGeometry(0.008, 0.012, 32), new THREE.MeshBasicMaterial({ color: 0xffc21a, side: THREE.DoubleSide })); cursor.position.z = 0.004; scene.add(cursor);
+
+// ---------- 로봇 ----------
+const S = { q: D.home.slice(), target: null, pinch: false, mode: "hand", lastGrab: 0 };
+let F = K.fk(S.q), lastQ = S.q.slice();
+const OPEN = 0.6;   // 공 지름(3.2cm)에 맞춘 벌림. 끝까지(1.2) 벌리면 보기에 과함
+S.q[5] = OPEN;
+function stepRobot(dt) {
+  if (!S.target) return;
+  const z = S.pinch || B.held ? GRASP + (B.held ? 0.02 : 0) : HOVER;
+  const q = S.q.slice(); q[5] = JAW.grip;
+  const sol = K.ik([S.target[0], S.target[1], z], q);
+  const goal = sol.q.concat([S.pinch ? JAW.grip : OPEN]);
+  const k = 1 - Math.pow(0.0005, dt);        // 부드럽게 따라감(약 150ms)
+  for (let i = 0; i < 6; i++) S.q[i] += (goal[i] - S.q[i]) * k;
+}
+function grabLogic() {
+  F = K.fk(S.q);
+  const tip = K.tipOf(F);
+  const closed = S.q[5] < (JAW.grip + 0.15);
+  if (!B.held && S.pinch && closed) {
+    const d = Math.hypot(tip[0] - B.p[0], tip[1] - B.p[1], tip[2] - B.p[2]);
+    if (d < GRAB_DIST + BALL_R) {
+      const fj = F.Fixed_Jaw, inv = conj(fj.r); B.grip = { p: qrot(inv, sub(B.p, fj.p)) }; B.held = true; $("phase").textContent = "공을 집었습니다 — 초록 원으로"; log("집기 성공");
+    }
+  }
+  if (B.held && !S.pinch) {
+    B.held = false; const fj = F.Fixed_Jaw; const p = RobotKin.add(fj.p, qrot(fj.r, B.grip.p));
+    B.p = [p[0], p[1], BALL_R];
+    const onTarget = Math.hypot(p[0] - TARGET[0], p[1] - TARGET[1]) < 0.04;
+    if (onTarget) { done = true; score++; $("score").textContent = score; toast("성공!"); log(`성공 ${score} · ${elapsed().toFixed(1)}초`); $("phase").textContent = "성공! 「공 다시 놓기」로 한 번 더"; }
+    else { $("phase").textContent = "놓았습니다 — 다시 집어 보세요"; log("원 밖에 놓음"); }
+  }
+}
+let score = 0, tries = 0, t0 = null, done = false;
+const elapsed = () => t0 ? (performance.now() - t0) / 1000 : 0;
+function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); setTimeout(() => e.classList.remove("on"), 1400); }
+function setPinch(v) { if (v && !S.pinch) { tries++; $("tries").textContent = tries; if (!t0) t0 = performance.now(); } S.pinch = v; $("gripdot").classList.toggle("on", v); }
+function resetBall() { done = false; B.p = [0.08 + Math.random() * 0.1, -0.24 + Math.random() * 0.1, BALL_R]; B.held = false; setPinch(false); t0 = null; $("time").textContent = "0.0"; $("phase").textContent = "공을 집어 초록 원에 놓으세요"; }
+$("reset").onclick = resetBall;
+
+// ---------- 입력 1: 웹캠 손 인식 (MediaPipe Hand Landmarker, 기기 안에서만 실행) ----------
+let landmarker = null, video = $("video"), ov = $("overlay"), octx = ov.getContext("2d"), lastVideoT = -1;
+async function startCamera() {
+  $("start").disabled = true; $("start").textContent = "불러오는 중…";
+  try {
+    const vision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs");
+    const files = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm");
+    landmarker = await vision.HandLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task" }, runningMode: "VIDEO", numHands: 1 });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" }, audio: false });
+    video.srcObject = stream; await video.play(); $("cam").hidden = false; ov.width = 320; ov.height = 240;
+    $("start").textContent = "카메라 켜짐"; $("phase").textContent = "손바닥을 카메라에 보이세요"; log("카메라 켜짐 — 영상은 기기 밖으로 나가지 않음");
+    if (!t0) t0 = null;
+  } catch (e) { $("start").disabled = false; $("start").textContent = "카메라 켜기"; $("phase").textContent = "카메라를 쓸 수 없습니다 — 터치 모드로"; log("카메라 실패: " + (e.message || e)); setMode("touch"); }
+}
+$("start").onclick = startCamera;
+function readHand() {
+  if (!landmarker || video.readyState < 2 || video.currentTime === lastVideoT) return;
+  lastVideoT = video.currentTime;
+  const res = landmarker.detectForVideo(video, performance.now());
+  octx.clearRect(0, 0, ov.width, ov.height);
+  const lm = res.landmarks && res.landmarks[0];
+  if (!lm) { $("hand").textContent = "없음"; return; }
+  $("hand").textContent = "인식";
+  // 점 그리기(미리보기)
+  octx.fillStyle = "#ffc21a"; for (const p of lm) octx.fillRect(p.x * ov.width - 2, p.y * ov.height - 2, 4, 4);
+  const idx = lm[8], thumb = lm[4];
+  const pinchD = Math.hypot(idx.x - thumb.x, idx.y - thumb.y);
+  // 거울 보정: 화면에서 오른쪽으로 움직이면 로봇도 오른쪽(+x). 위로 움직이면 멀리(y 감소 쪽 = 로봇에서 멀어짐)
+  const nx = 1 - idx.x, ny = idx.y;
+  const x = WS.xmin + nx * (WS.xmax - WS.xmin);
+  const y = WS.ymax - (1 - ny) * (WS.ymax - WS.ymin);   // 손이 화면 위쪽(ny→0) = 작업대 먼 쪽(y 작음)
+  S.target = [Math.min(WS.xmax, Math.max(WS.xmin, x)), Math.min(WS.ymax, Math.max(WS.ymin, y))];
+  setPinch(pinchD < 0.06);
+}
+
+// ---------- 입력 2: 터치·마우스 ----------
+const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hit = new THREE.Vector3();
+let pressT = 0, pressTimer = null;
+function pointerToTarget(e) {
+  const r = canvas.getBoundingClientRect(); const m = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(m, camera); if (ray.ray.intersectPlane(plane, hit)) S.target = [Math.min(WS.xmax, Math.max(WS.xmin, hit.x)), Math.min(WS.ymax, Math.max(WS.ymin, hit.y))];
+}
+canvas.addEventListener("pointerdown", (e) => { if (S.mode !== "touch") return; pointerToTarget(e); pressT = performance.now(); clearTimeout(pressTimer); pressTimer = setTimeout(() => { setPinch(!S.pinch); $("phase").textContent = S.pinch ? "집게 닫음(길게 누르면 열림)" : "집게 열음"; }, 450); });
+canvas.addEventListener("pointermove", (e) => { if (S.mode !== "touch") return; if (!(e.buttons & 1) && e.pointerType === "mouse") return; pointerToTarget(e); if (performance.now() - pressT < 450) clearTimeout(pressTimer); });
+canvas.addEventListener("pointerup", () => clearTimeout(pressTimer));
+function setMode(m) { S.mode = m; $("m-hand").classList.toggle("on", m === "hand"); $("m-touch").classList.toggle("on", m === "touch"); $("hint").textContent = m === "hand" ? "카메라 허용 뒤 손바닥을 카메라에 보이세요. 손을 좌우·앞뒤로 움직이면 로봇팔 끝이 따라갑니다." : "화면을 드래그하면 그 자리로 로봇팔이 갑니다. 길게 누르면 집게가 닫히고, 다시 길게 누르면 열립니다."; $("start").hidden = m !== "hand"; if (m === "touch") $("cam").hidden = true; else if (landmarker) $("cam").hidden = false; }
+$("m-hand").onclick = () => setMode("hand"); $("m-touch").onclick = () => setMode("touch");
+
+// ---------- 그리기 ----------
+function draw() {
+  F = K.fk(S.q);
+  for (const n in bodyObj) { const f = F[n], o = bodyObj[n]; o.position.set(f.p[0], f.p[1], f.p[2]); o.quaternion.set(f.r[1], f.r[2], f.r[3], f.r[0]); }
+  let p = B.p; if (B.held) { const fj = F.Fixed_Jaw; p = RobotKin.add(fj.p, qrot(fj.r, B.grip.p)); }
+  ball.position.set(p[0], p[1], p[2]);
+  if (S.target) cursor.position.set(S.target[0], S.target[1], 0.004);
+  if (t0 && !done) $("time").textContent = elapsed().toFixed(1);
+}
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+let last = performance.now();
+function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; if (S.mode === "hand") readHand(); stepRobot(dt); grabLogic(); controls.update(); draw(); renderer.render(scene, camera); }
+resetBall(); draw(); $("loading").hidden = true; requestAnimationFrame(loop);
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) setMode("touch");
+window.__hand = { state: () => ({ q: S.q.slice(), target: S.target, pinch: S.pinch, held: B.held, ball: B.p.slice(), score, tries }), setTarget: (x, y) => { S.target = [x, y]; }, pinch: (v) => setPinch(v), mode: setMode, ballAt: (x, y) => { B.p = [x, y, BALL_R]; B.held = false; } };
+</script>
