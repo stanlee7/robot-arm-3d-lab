@@ -49,13 +49,17 @@ input[type=range]{accent-color:var(--accent)}
 .log{font-family:var(--mono);font-size:12px;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap}
 a{color:var(--accent)}
 .kbtn{cursor:pointer;color:var(--ink)}.kbtn.on{border-color:var(--accent);color:var(--accent)}
-.board{position:absolute;right:12px;top:12px;background:rgba(14,16,18,.9);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 14px;min-width:200px;box-shadow:0 10px 26px rgba(0,0,0,.45)}
-.board .bt{font-weight:700;font-size:14px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)}
+.board{position:absolute;right:12px;top:12px;background:rgba(8,10,12,.94);border:6px solid #1b1e21;border-radius:10px;padding:8px 10px;min-width:240px;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.cubs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cb{border:2px solid #4a5157;border-radius:8px;padding:6px 4px;text-align:center;min-width:62px}.cb .cn{display:block;font-size:12px;color:var(--muted)}.cb b{display:block;font-family:var(--mono);font-size:20px;font-weight:500;color:#59626a}
+.cb.on{border-color:var(--good);background:rgba(60,192,126,.14)}.cb.on b{color:#fff}.cb.on .cn{color:var(--good)}
+.board .mk{margin-top:6px}.board .mk span{font-family:var(--mono);color:var(--accent)}
+.board .bt{font-weight:700;font-size:13px;margin-bottom:6px}
 .board .bc{display:grid;grid-template-columns:1fr auto;gap:14px}.board .hd{color:var(--muted);font-size:12px}
 .board .nums{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:24px;font-weight:500;color:var(--accent);min-height:32px}
 .board .rd .nums span{color:var(--good);border:1px solid rgba(60,192,126,.6);background:rgba(60,192,126,.12);border-radius:8px;padding:0 8px}
 .board .rd{border-left:1px solid rgba(255,255,255,.1);padding-left:14px}
-.kiosk{position:absolute;right:12px;bottom:12px;width:268px;background:linear-gradient(#6b4a2e,#4a321e);border:1px solid #2c2118;border-radius:18px;padding:8px 8px 14px;box-shadow:0 14px 32px rgba(0,0,0,.6)}
+.kiosk{position:absolute;right:12px;bottom:12px;width:268px;background:linear-gradient(#202326,#0b0c0d);border:1px solid #3a4046;border-radius:18px;padding:8px 8px 14px;box-shadow:0 14px 32px rgba(0,0,0,.6)}
 .kiosk[hidden]{display:none}
 .ks{background:#121619;color:var(--ink);border:1px solid #2a3136;border-radius:12px;padding:12px;min-height:250px;display:flex;flex-direction:column;gap:8px;font-size:13px}
 .ks button{color:var(--ink)}
@@ -74,7 +78,7 @@ a{color:var(--accent)}
 .pay{font-size:15px;padding:11px}.pay:disabled{background:#2a3136;color:#6b7479!important;cursor:default}
 .kno{font-family:var(--mono);font-size:54px;font-weight:500;text-align:center;line-height:1.1;margin:6px 0 4px;color:var(--accent)}.kok{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#182024;display:grid;place-items:center;font-size:24px;font-weight:700;margin:10px auto 0}
 .kwarn{color:var(--bad);font-size:12px}
-@media (max-width:860px){.kiosk{left:12px;right:12px;width:auto;bottom:12px}.ks{min-height:0}.board{top:auto;bottom:12px;left:12px;right:auto}}
+@media (max-width:860px){.kiosk{left:12px;right:12px;width:auto;bottom:12px}.ks{min-height:0}.board{top:96px;right:12px;min-width:0;padding:6px 8px;border-width:4px}.board .bt{font-size:11px}.cubs{gap:4px}.cb{min-width:46px;padding:3px 2px}.cb .cn{font-size:11px}.cb b{font-size:15px}.board .mk{font-size:11px}}
 </style>
 </head>
 <body>
@@ -85,11 +89,11 @@ a{color:var(--accent)}
     <div class="kiosk" id="kiosk"><div class="ks" id="ks"></div></div></div>
   <aside>
     <div class="card"><h1>로봇 바리스타 3D 실습실</h1>
-      <div class="muted">실제 저가 로봇팔 SO-ARM100 모델이 정해진 순서(프로그램)로 커피를 만듭니다. 실행 중 AI는 쓰지 않습니다. <a href="./">← 로봇팔 실습실</a></div></div>
+      <div class="muted">실제 저가 로봇팔 SO-ARM100 모델이 정해진 순서(프로그램)로 커피를 만듭니다. 실행 중 AI는 쓰지 않습니다. 배치는 실제 고속도로 휴게소 로봇 카페(유리 부스, 뒤쪽 컵 디스펜서와 머신, 앞줄 번호 칸)를 보고 맞췄습니다. <a href="./">← 로봇팔 실습실</a></div></div>
     <div class="card"><h2>1. 주문</h2>
       <div class="row"><button class="btn primary" id="o-a">아메리카노</button><button class="btn primary" id="o-l">라떼</button><button class="btn" id="o-3">3잔 한 번에</button></div>
-      <div class="muted" style="margin-top:6px">컵 보관대 3개 · 픽업대 2칸(차면 손님이 가져감)</div>
-      <div class="muted" style="margin-top:4px">화면 속 <b>키오스크</b>로 주문하면 로봇이 일하는 중에도 주문이 쌓이고, 오른쪽 위 픽업 화면에 번호가 뜹니다.</div></div>
+      <div class="muted" style="margin-top:6px">컵 디스펜서에서 컵을 집어 뒤쪽 머신에 올리고, 다 되면 팔을 길게 뻗어 유리 앞 번호 칸(1, 2, 3번)에 내려놓습니다.</div>
+      <div class="muted" style="margin-top:4px">화면 속 <b>키오스크</b>로 주문하면 로봇이 일하는 중에도 주문이 쌓이고, 오른쪽 위 화면에 내 음료가 몇 번 칸에 있는지 뜹니다.</div></div>
     <div class="card"><h2>2. 로봇이 일하는 방식</h2>
       <div class="seg"><button id="m-seq" class="on">한 잔씩 끝까지</button><button id="m-pipe">머신 도는 동안 다음 일</button></div>
       <label class="sl">에스프레소<input type="range" id="t-e" min="2" max="30" value="10"><span id="v-e">10초</span></label>
@@ -246,8 +250,10 @@ const { qrot, qmul, sub } = RobotKin;
 const JAW = D.jaw;
 const conj = (q) => [q[0], -q[1], -q[2], -q[3]];
 
-// ---------- 배치 (MuJoCo 장면 sim/scene_barista.xml과 같은 자리, m) ----------
-const SPOT = { rack1: [0.17, -0.08], rack2: [0.205, -0.15], rack3: [0.15, -0.22], espresso: [0, -0.245], milk: [-0.125, -0.215], pickup1: [-0.2, -0.075], pickup2: [-0.215, -0.14] };
+// ---------- 배치 (2026-10-13: 실제 고속도로 휴게소 로봇 카페 영상을 보고 맞춤) ----------
+// 손님은 +x 쪽 유리 밖에 서 있다. 뒤(-y)에 머신, 왼쪽 뒤에 컵 디스펜서, 유리 바로 안쪽 앞줄에 번호 칸 1, 2, 3.
+const SPOT = { rack1: [-0.21, -0.04], rack2: [-0.235, -0.11], rack3: [-0.205, -0.175], espresso: [0, -0.245], milk: [-0.125, -0.215], pickup1: [0.22, -0.19], pickup2: [0.22, -0.11], pickup3: [0.22, -0.03] };
+const PICKUPS = ["pickup1", "pickup2", "pickup3"];
 const CUP_R = 0.015, CUP_H = 0.04, HOVER = 0.09, GRASP = 0.025, PLACE = 0.036;
 const BREW = { espresso: 10, milk: 6 };
 const RECIPES = { "아메리카노": [["espresso", 0x3d200f]], "라떼": [["espresso", 0x3d200f], ["milk", 0xc79a6b]] };
@@ -257,41 +263,70 @@ const stage = $("stage"), canvas = $("view");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x17110c); scene.fog = new THREE.Fog(0x17110c, 2.2, 5.5);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0e1216); scene.fog = new THREE.Fog(0x0e1216, 2.4, 6);
 const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 30); camera.up.set(0, 0, 1);
-camera.position.set(0.6, -0.12, 0.36);
-const controls = new OrbitControls(camera, canvas); controls.target.set(-0.01, -0.16, 0.04); controls.enableDamping = true; controls.screenSpacePanning = true; controls.update();
-scene.add(new THREE.HemisphereLight(0xffe9cf, 0x2a1d14, 0.75));
-const sun = new THREE.DirectionalLight(0xfff0dc, 2.1); sun.position.set(0.45, 0.2, 1.4); sun.target.position.set(0, -0.15, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+camera.position.set(0.95, 0.3, 0.5);
+const controls = new OrbitControls(camera, canvas); controls.target.set(0.0, 0.02, 0.08); controls.enableDamping = true; controls.screenSpacePanning = true; controls.update();
+scene.add(new THREE.HemisphereLight(0xeef3ff, 0x1a1d22, 0.8));
+const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(0.45, 0.25, 1.4); sun.target.position.set(0, -0.15, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -0.6, right: 0.6, top: 0.6, bottom: -0.6, near: 0.3, far: 3 }); sun.shadow.bias = -0.0004; scene.add(sun, sun.target);
 const box = (sx, sy, sz, x, y, z, color, rough = 0.6, metal = 0.05) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal })); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
-// 나뭇결 무늬(코드로 그림 — 외부 이미지 없음)
-function woodTex(base, dark, rep = 1) {
-  const c = document.createElement("canvas"); c.width = 512; c.height = 512; const g = c.getContext("2d");
+const canvasTex = (w, h, draw, rep = 1) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.anisotropy = 4; return t; };
+// 나뭇결 무늬(코드로 그림, 외부 이미지 없음)
+const woodTex = (base, dark, rep = 1) => canvasTex(512, 512, (g) => {
   g.fillStyle = base; g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 140; i++) { const y = Math.random() * 512, a = 0.04 + Math.random() * 0.1; g.strokeStyle = `rgba(${dark},${a})`; g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 4); g.stroke(); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); return t;
+}, rep);
+// 부스 안 바닥: 짙은 회색 타일
+const tileTex = canvasTex(512, 512, (g) => { g.fillStyle = "#30353a"; g.fillRect(0, 0, 512, 512); g.strokeStyle = "#1c2024"; g.lineWidth = 4; for (let i = 0; i <= 512; i += 128) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 512); g.moveTo(0, i); g.lineTo(512, i); g.stroke(); } for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${0.02 + Math.random() * 0.03})`; g.fillRect(Math.random() * 512, Math.random() * 512, 30 + Math.random() * 60, 6 + Math.random() * 20); } }, 2);
+const floor = box(0.71, 0.8, 0.04, -0.095, -0.15, -0.02, 0xffffff, 0.22, 0.15); floor.material.map = tileTex;
+box(0.9, 0.04, 0.9, 0, -0.57, 0.43, 0x1a1e22, 0.85);                         // 뒷벽
+const header = box(0.9, 0.22, 0.014, 0, -0.45, 0.44, 0xcdb99b, 0.7); header.castShadow = false; // 뒤쪽 위 베이지 천장판
+const warm = new THREE.PointLight(0xffd29a, 0.25, 1.2, 1.6); warm.position.set(-0.28, -0.12, 0.42); scene.add(warm);
+// 컵 디스펜서: 천장에서 내려온 투명 통 3개, 안에 컵이 거꾸로 쌓여 있음
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xd8ecf5, transparent: true, opacity: 0.13, roughness: 0.04, metalness: 0, depthWrite: false, side: THREE.DoubleSide });
+const cupMat = new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 0.4 });
+for (const k of ["rack1", "rack2", "rack3"]) {
+  const [x, y] = SPOT[k], tx = x - 0.085;
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.26, 28, 1, true), glassMat); tube.rotation.x = Math.PI / 2; tube.position.set(tx, y, 0.33); tube.renderOrder = 2; scene.add(tube);
+  for (let i = 0; i < 9; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(CUP_R * 0.85, CUP_R, CUP_H, 24, 1, true), cupMat); c.rotation.x = Math.PI / 2; c.position.set(tx, y, 0.23 + i * 0.022); c.castShadow = true; scene.add(c); }
+  box(0.05, 0.05, 0.012, tx, y, 0.2, 0x2a2f34, 0.35, 0.6);                  // 배출구
+  box(0.05, 0.05, 0.004, x, y, 0.002, 0x1d2125, 0.6);                      // 컵 받침
 }
-const counter = box(0.9, 0.8, 0.04, 0, -0.15, -0.02, 0xffffff, 0.55); counter.material.map = woodTex("#b9895a", "60,32,14", 1); // 작업대(나무 카운터)
-box(0.9, 0.04, 0.9, -0.0, -0.57, 0.43, 0x2b2019, 0.85);                      // 뒷벽
-const shelf = box(0.7, 0.07, 0.012, 0.02, -0.52, 0.24, 0xffffff, 0.6); shelf.material.map = woodTex("#8a5d36", "40,20,8", 1);
-for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.013, 0.04, 24), new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 0.35 })); m.rotation.x = Math.PI / 2; m.position.set(-0.24 + i * 0.07, -0.52, 0.266); m.castShadow = true; scene.add(m); }
-const warm = new THREE.PointLight(0xffb066, 0.35, 1.4, 1.6); warm.position.set(0.05, -0.45, 0.32); scene.add(warm);
-const strip = box(0.66, 0.006, 0.004, 0.02, -0.495, 0.232, 0xffd9a0, 0.3); strip.material.emissive = new THREE.Color(0xffb35c); strip.material.emissiveIntensity = 1.2; strip.castShadow = false;
+box(0.02, 0.36, 0.012, -0.295, -0.11, 0.47, 0x2a2f34, 0.4, 0.5);           // 디스펜서 걸이
+// 뒤쪽 머신: 에스프레소, 우유, 그 아래 긴 스테인리스 물받이
 box(0.1, 0.06, 0.16, 0, -0.315, 0.08, 0x1a1a1c, 0.35, 0.3);              // 에스프레소 몸체
 box(0.104, 0.064, 0.008, 0, -0.315, 0.164, 0xc9ccd0, 0.25, 0.9);         // 윗판(스테인리스)
 const grp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.018, 24), new THREE.MeshStandardMaterial({ color: 0xd5d8dc, roughness: 0.2, metalness: 0.95 })); grp.position.set(0, -0.268, 0.114); scene.add(grp); // 추출구
 box(0.06, 0.024, 0.024, 0, -0.278, 0.135, 0x1a1a1c, 0.35, 0.3);          // 머리
-box(0.064, 0.064, 0.004, 0, -0.245, 0.002, 0x2a2c30, 0.8);               // 받침
 const espLed = box(0.036, 0.004, 0.012, 0.03, -0.284, 0.15, 0x22dd55, 0.4); espLed.material.emissive = new THREE.Color(0x0a5520);
 box(0.07, 0.05, 0.13, -0.13, -0.29, 0.065, 0xb8bcc1, 0.22, 0.85);         // 우유 스테이션(스테인리스)
-box(0.056, 0.056, 0.004, -0.125, -0.215, 0.002, 0x2a2c30, 0.8);
 const milkLed = box(0.03, 0.004, 0.01, -0.13, -0.264, 0.115, 0x22dd55, 0.4); milkLed.material.emissive = new THREE.Color(0x0a5520);
-const wood = 0x5a3b22;
-const rackPlate = box(0.1, 0.2, 0.004, 0.178, -0.15, 0.002, wood, 0.7); rackPlate.rotation.z = -0.21;
-box(0.07, 0.15, 0.004, -0.21, -0.11, 0.002, wood, 0.7);                  // 픽업대
-for (const k of ["pickup1", "pickup2"]) { const d = new THREE.Mesh(new THREE.CircleGeometry(0.018, 32), new THREE.MeshStandardMaterial({ color: 0x2fbf71 })); d.position.set(SPOT[k][0], SPOT[k][1], 0.0045); scene.add(d); }
-const base = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 48), new THREE.MeshStandardMaterial({ color: 0x202428, metalness: 0.4, roughness: 0.45 })); base.rotation.x = Math.PI / 2; base.position.set(0, 0, 0.004); scene.add(base);
+const grille = canvasTex(512, 64, (g) => { g.fillStyle = "#8d9399"; g.fillRect(0, 0, 512, 64); g.fillStyle = "#3b4045"; for (let x = 6; x < 512; x += 12) g.fillRect(x, 8, 5, 48); });
+const tray = box(0.26, 0.07, 0.004, -0.06, -0.235, 0.002, 0xffffff, 0.3, 0.8); tray.material.map = grille;
+const sideGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.2), glassMat); sideGlass.rotation.set(Math.PI / 2, 0, Math.PI / 2, "ZXY"); sideGlass.position.set(0.075, -0.27, 0.1); sideGlass.renderOrder = 2; scene.add(sideGlass); // 머신 옆 유리 칸막이
+// 앞줄 픽업 칸: 검은 상자, 손님 쪽 면에 큰 흰 숫자, 음료가 있으면 위 표시등이 켜짐
+const cubLed = {};
+PICKUPS.forEach((k, i) => {
+  const [x, y] = SPOT[k];
+  box(0.078, 0.078, 0.004, x + 0.003, y, 0.002, 0x0d0f11, 0.5);            // 칸 바닥
+  box(0.008, 0.078, 0.1, 0.262, y, 0.005, 0x0b0c0e, 0.45);                  // 앞판
+  const num = canvasTex(256, 320, (g, w, h) => { g.fillStyle = "#0b0c0e"; g.fillRect(0, 0, w, h); g.fillStyle = "#ffffff"; g.font = "700 230px Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1), w / 2, h / 2 + 12); });
+  const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.064, 0.08), new THREE.MeshStandardMaterial({ map: num, roughness: 0.5 })); lab.rotation.set(Math.PI / 2, 0, Math.PI / 2, "ZXY"); lab.position.set(0.2665, y, 0.004); scene.add(lab);
+  const led = box(0.003, 0.05, 0.004, 0.2665, y, 0.05, 0x333a40, 0.4); led.castShadow = false; led.material.emissive = new THREE.Color(0x000000); cubLed[k] = led;
+});
+for (const yd of [-0.23, -0.15, -0.07, 0.01]) box(0.078, 0.004, 0.05, 0.224, yd, 0.025, 0x0b0c0e, 0.45); // 칸막이
+box(0.008, 0.8, 0.06, 0.262, -0.15, -0.075, 0x0b0c0e, 0.5);                // 아래 검은 앞판
+const ledge = box(0.16, 0.8, 0.026, 0.35, -0.15, -0.058, 0xffffff, 0.55); ledge.material.map = woodTex("#7a4f2c", "35,18,6", 1); // 바깥 나무 선반
+// 유리 부스: 손님 쪽 앞유리(칸 위), 옆유리, 검은 틀
+const pane = (w, h, x, y, z, rz) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glassMat); m.rotation.set(Math.PI / 2, 0, rz, "ZXY"); m.position.set(x, y, z); m.renderOrder = 3; scene.add(m); return m; };
+pane(0.8, 0.4, 0.285, -0.15, 0.27, Math.PI / 2);                            // 앞유리
+pane(0.73, 0.5, -0.08, 0.25, 0.22, 0);                                      // 옆유리
+// 앞유리에 비친 빛줄기(유리가 있다는 걸 보이게)
+const streakMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.07, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+for (const [y, w] of [[0.12, 0.05], [0.05, 0.018], [-0.36, 0.06], [-0.44, 0.02]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.42), streakMat); m.rotation.set(Math.PI / 2, -0.5, Math.PI / 2, "ZXY"); m.position.set(0.287, y, 0.27); m.renderOrder = 4; scene.add(m); }
+for (const [sx, sy, sz, x, y, z] of [[0.012, 0.8, 0.012, 0.285, -0.15, 0.07], [0.012, 0.8, 0.02, 0.285, -0.15, 0.47], [0.012, 0.012, 0.42, 0.285, 0.25, 0.26], [0.012, 0.012, 0.42, 0.285, -0.55, 0.26]]) { const f = box(sx, sy, sz, x, y, z, 0x15181b, 0.4, 0.4); f.castShadow = false; }
+const base = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 48), new THREE.MeshStandardMaterial({ color: 0xdfe2e3, metalness: 0.2, roughness: 0.4 })); base.rotation.x = Math.PI / 2; base.position.set(0, 0, 0.004); scene.add(base);
 // 로봇 (MuJoCo 모델 모양 그대로)
 function u16(b64) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Uint16Array(u8.buffer); }
 const geos = D.meshes.map((ms) => { const v = u16(ms.v), f = u16(ms.f), pos = new Float32Array(v.length); for (let i = 0; i < v.length; i += 3) { pos[i] = ms.min[0] + v[i] * ms.scale[0]; pos[i + 1] = ms.min[1] + v[i + 1] * ms.scale[1]; pos[i + 2] = ms.min[2] + v[i + 2] * ms.scale[2]; } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(f, 1)); return toCreasedNormals(g, Math.PI / 6); });
@@ -342,16 +377,25 @@ let orders = [], mode = "seq", nextNo = 1;
 const log = (t) => { const l = $("log"); l.textContent = `[${clock.toFixed(1)}s] ${t}\n` + l.textContent; };
 function render() {
   if ($("ks")) { kRender(); boardRender(); }
-  $("orders").innerHTML = orders.length ? orders.map((o) => `<div class="o ${o.state === "완료" ? "done" : ""}"><span>#${o.no} ${o.drink}</span><span class="s ${o.state === "대기" ? "wait" : ""}">${o.state}${o.sec ? ` · ${o.sec.toFixed(1)}초` : ""}</span></div>`).join("") : '<div class="muted">주문을 넣어 보세요</div>';
+  $("orders").innerHTML = orders.length ? orders.map((o) => `<div class="o ${o.state === "완료" ? "done" : ""}"><span>#${o.no} ${o.drink}</span><span class="s ${o.state === "대기" ? "wait" : ""}">${o.state === "완료" && o.cubby ? `${o.cubby}번 칸 ` : ""}${o.state}${o.sec ? ` · ${o.sec.toFixed(1)}초` : ""}</span></div>`).join("") : '<div class="muted">주문을 넣어 보세요</div>';
 }
+// 칸은 1, 2, 3번을 돌아가며 쓴다(지난번 다음 칸부터 빈 칸). 다 차 있으면 가장 먼저 나온 음료를 손님이 가져간 것으로 보고 그 칸을 쓴다.
+let lastCubby = -1;
 function freePickup() {
-  let p = ["pickup1", "pickup2"].find((k) => !cupAt(k));
-  if (!p) { const old = cupAt("pickup1"); old.g.visible = false; old.p = [9, 9, 0]; log("손님이 픽업대1 음료를 가져감"); p = "pickup1"; }
-  return p;
+  let p = [1, 2, 3].map((d) => PICKUPS[(lastCubby + d) % 3]).find((k) => !cupAt(k));
+  if (!p) {
+    const occ = PICKUPS.map((k) => ({ k, o: orders.filter((o) => o.cup === cupAt(k)).sort((a, b) => b.no - a.no)[0] })).sort((a, b) => (a.o?.doneAt ?? -1) - (b.o?.doneAt ?? -1))[0];
+    p = occ.k; const old = cupAt(p); old.g.visible = false; old.p = [9, 9, 0]; if (occ.o) occ.o.taken = true; log(`손님이 ${KO[p]} 음료를 가져감`);
+  }
+  lastCubby = PICKUPS.indexOf(p); return p;
 }
 const busyM = {};
-const KO = { rack1: "보관대1", rack2: "보관대2", rack3: "보관대3", espresso: "에스프레소", milk: "우유", pickup1: "픽업대1", pickup2: "픽업대2" };
-async function moveCup(o, src, dst) { $("phase").textContent = `#${o.no} ${KO[src]} → ${KO[dst]}`; await pick(src); await place(dst); }
+const KO = { rack1: "컵 자리1", rack2: "컵 자리2", rack3: "컵 자리3", espresso: "에스프레소", milk: "우유", pickup1: "1번 칸", pickup2: "2번 칸", pickup3: "3번 칸" };
+async function moveCup(o, src, dst) {
+  $("phase").textContent = `#${o.no} ${KO[src]} → ${KO[dst]}`;
+  const i = PICKUPS.indexOf(dst); if (i >= 0) o.cubby = i + 1;   // 앞줄 칸으로 길게 뻗어 내려놓는다
+  await pick(src); await place(dst);
+}
 function startBrew(o, st) { busyM[st] = o.no; o.at = st; o.ready = clock + BREW[st]; o.brewStart = clock; o.state = st === "espresso" ? "에스프레소 추출" : "우유 스팀"; render(); }
 
 async function runSeq() {
@@ -363,7 +407,7 @@ async function runSeq() {
       await moveCup(o, here, st); startBrew(o, st); $("phase").textContent = `#${o.no} 기다리는 중`; await park(); await waitUntil(o.ready);
       fillCup(o.cup, color); delete busyM[st]; here = st;
     }
-    await moveCup(o, here, freePickup()); o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`);
+    await moveCup(o, here, freePickup()); o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료, ${o.cubby}번 칸 (${o.sec.toFixed(1)}초)`);
   }
 }
 async function runPipe() {
@@ -384,7 +428,7 @@ async function runPipe() {
     if (o.step < 0) { o.t0 = clock; o.state = "만드는 중"; render(); }
     await moveCup(o, src, dst); if (src in BREW) delete busyM[src];
     if (dst in BREW) { o.step++; o.filled = false; startBrew(o, dst); }
-    else { o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료 (${o.sec.toFixed(1)}초)`); }
+    else { o.state = "완료"; o.sec = clock - o.t0; o.doneAt = clock; render(); log(`#${o.no} ${o.drink} 완료, ${o.cubby}번 칸 (${o.sec.toFixed(1)}초)`); }
   }
 }
 async function go() {
@@ -414,7 +458,7 @@ function add(drinks, batch) {
   drinks.forEach((d, i) => {
     const c = free[i];
     if (!atHome(c)) {
-      if (c.g.visible) log(`손님이 ${KO[["pickup1", "pickup2"].find((k) => cupAt(k) === c)] || "픽업대"} 음료를 가져감`);
+      if (c.g.visible) log(`손님이 ${KO[PICKUPS.find((k) => cupAt(k) === c)] || "픽업 칸"} 음료를 가져감`);
       c.g.visible = true; c.p = [SPOT[c.home][0], SPOT[c.home][1], CUP_H / 2]; c.r = [1, 0, 0, 0]; fillCup(c, 0xf4f4f1); log(`직원이 ${KO[c.home]}에 새 컵 보충`);
     }
     orders.push({ no: nextNo++, drink: d, cup: c, state: "대기", step: -1, at: null, ready: null, batch });
@@ -435,7 +479,7 @@ function kRender() {
   const ks = $("ks"), n = cart["아메리카노"] + cart["라떼"], cap = freeCups().length;
   if (kView === "done") {
     ks.innerHTML = `<div class="kh"><span>로봇 카페</span><span class="km">결제는 데모라 생략</span></div><div class="kok">✓</div><div class="km" style="text-align:center;margin-top:6px">주문 완료 · 주문번호</div>
-      <div class="kno">${kNos.map((x) => "#" + String(x).padStart(2, "0")).join(" ")}</div><div class="km" style="text-align:center">오른쪽 위 픽업 화면에 번호가 뜨면 가져가세요</div>`;
+      <div class="kno">${kNos.map((x) => "#" + String(x).padStart(2, "0")).join(" ")}</div><div class="km" style="text-align:center">음료가 나오면 픽업 화면에 몇 번 칸인지 뜹니다</div>`;
     return;
   }
   const total = Object.entries(cart).reduce((s, [k, v]) => s + v * MENU[k].price, 0);
@@ -461,23 +505,23 @@ $("ks").onclick = (e) => {
 };
 $("k-toggle").onclick = () => { const k = $("kiosk"); k.hidden = !k.hidden; $("k-toggle").classList.toggle("on", !k.hidden); };
 if (innerWidth < 860) { $("kiosk").hidden = true; $("k-toggle").classList.remove("on"); }
-const onPickup = (o) => ["pickup1", "pickup2"].some((k) => cupAt(k) === o.cup) && !orders.some((x) => x.cup === o.cup && x.no > o.no);
+const onPickup = (o) => PICKUPS.some((k) => cupAt(k) === o.cup) && !orders.some((x) => x.cup === o.cup && x.no > o.no);
+// 실물 카페처럼: 「음료가 나오는 위치」 화면에 칸 3개, 칸마다 들어 있는 주문번호
 function boardRender() {
-  const making = orders.filter((o) => o.state !== "완료").map((o) => o.no);
-  const ready = orders.filter((o) => o.state === "완료" && onPickup(o)).map((o) => o.no);
-  const f = (a) => a.length ? a.map((x) => `<span>${String(x).padStart(2, "0")}</span>`).join("") : '<i style="color:var(--muted);font-style:normal">-</i>';
-  $("board").innerHTML = `<div class="bt">🔔 픽업</div><div class="bc"><div><div class="hd">준비 중</div><div class="nums">${f(making)}</div></div><div class="rd"><div class="hd">픽업하세요</div><div class="nums">${f(ready)}</div></div></div>`;
+  const making = orders.filter((o) => o.state !== "완료").map((o) => String(o.no).padStart(2, "0"));
+  const cells = PICKUPS.map((k, i) => { const c = cupAt(k), o = c && orders.filter((x) => x.cup === c && x.state === "완료").sort((a, b) => b.no - a.no)[0]; return `<div class="cb ${o ? "on" : ""}"><span class="cn">${i + 1}번 칸</span><b>${o ? "#" + String(o.no).padStart(2, "0") : "-"}</b></div>`; }).join("");
+  $("board").innerHTML = `<div class="bt">음료가 나오는 위치를 확인하세요</div><div class="cubs">${cells}</div><div class="hd mk">준비 중 <span>${making.length ? making.map((x) => "#" + x).join(" ") : "-"}</span></div>`;
 }
 // 픽업대 음료는 로봇 시간 8초 뒤 손님이 가져간다
 function takeAway() {
   for (const o of orders) if (o.state === "완료" && o.doneAt !== undefined && !o.taken && clock - o.doneAt > 8 && onPickup(o)) {
-    o.taken = true; o.cup.g.visible = false; o.cup.p = [9, 9, 0]; log(`손님이 #${o.no} ${o.drink}를 가져감`); render();
+    o.taken = true; o.cup.g.visible = false; o.cup.p = [9, 9, 0]; log(`손님이 ${o.cubby}번 칸에서 #${o.no} ${o.drink}를 가져감`); render();
   }
 }
 function reset() {
   if (S.busy) return;
   cups.forEach((c) => { c.g.visible = true; c.p = [SPOT[c.home][0], SPOT[c.home][1], CUP_H / 2]; c.r = [1, 0, 0, 0]; fillCup(c, 0xf4f4f1); });
-  orders = []; Object.keys(busyM).forEach((k) => delete busyM[k]); clock = 0; render(); $("phase").textContent = "대기";
+  orders = []; lastCubby = -1; Object.keys(busyM).forEach((k) => delete busyM[k]); clock = 0; render(); $("phase").textContent = "대기";
 }
 function setBtns() { for (const id of ["o-a", "o-l", "o-3", "reset", "m-seq", "m-pipe"]) $(id).disabled = S.busy; }
 $("o-a").onclick = () => add(["아메리카노"]); $("o-l").onclick = () => add(["라떼"]);
@@ -501,16 +545,17 @@ function draw() {
     const o = orders.find((o) => o.no === busyM[k]); const k01 = o ? Math.min(1, (clock - o.brewStart) / BREW[k]) : 0;
     $(bar).style.width = (k01 * 100) + "%"; $(bar === "b-e" ? "p-e" : "p-m").textContent = o && k01 < 1 ? Math.round(k01 * 100) + "%" : o ? "완료" : "-"; led.material.emissive.setHex(o && k01 < 1 ? 0x553300 : 0x0a5520); led.material.color.setHex(o && k01 < 1 ? 0xffaa22 : 0x22dd55);
   }
+  for (const k of PICKUPS) { const on = !!cupAt(k); cubLed[k].material.emissive.setHex(on ? 0x22cc66 : 0x000000); cubLed[k].material.color.setHex(on ? 0x5dffa0 : 0x333a40); }
   $("clock").textContent = clock.toFixed(1);
   takeAway();
 }
-function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < 1 ? 55 : 45; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(stage); resize();
 let last = performance.now();
 let MANUAL = false;  // 영상 녹화용: 시간을 직접 넘김(__barista.advance)
 function loop(now) { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; if (!MANUAL) step(dt); controls.update(); draw(); renderer.render(scene, camera); }
 draw(); $("loading").hidden = true; requestAnimationFrame(loop); render();
-window.__barista = { manual: (on) => { MANUAL = on; }, advance: async (sec) => { for (let t = 0; t < sec; t += 0.02) { step(0.02); await Promise.resolve(); } controls.update(); draw(); renderer.render(scene, camera); }, state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec })), busy: S.busy, board: $("board").textContent }), kiosk: (list) => { for (const d of list) cart[d]++; kRender(); $("k-pay").click(); }, run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
+window.__barista = { manual: (on) => { MANUAL = on; }, advance: async (sec) => { for (let t = 0; t < sec; t += 0.02) { step(0.02); await Promise.resolve(); } controls.update(); draw(); renderer.render(scene, camera); }, state: () => ({ clock, orders: orders.map((o) => ({ no: o.no, s: o.state, sec: o.sec, cubby: o.cubby })), busy: S.busy, board: $("board").textContent, cubbies: PICKUPS.map((k) => !!cupAt(k)) }), kiosk: (list) => { for (const d of list) cart[d]++; kRender(); $("k-pay").click(); }, run3: (m) => { setMode(m); $("o-3").click(); }, speed: (v) => { S.speed = v; } };
 </script>
 </body>
 </html>
